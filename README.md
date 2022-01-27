@@ -10,3 +10,4 @@ To get the bot and learn more about The Froggy Gang and Frog Bot, go to [The Fro
 To view a full command changelog, go to [Frog Bot 2.0 Changelog.](https://docs.google.com/document/d/1Lo62dreCjfNr0GNWGwCid1ZX-cgBqMz1xsxHmNZHhJk/edit?usp=sharing)
 
 ![Frog Bot 2.0 Update 0.3 Flyer](https://raw.githubusercontent.com/HereJohnnyboi/Frog-Bot-2.0/HereJohnnyboi-flyers/Frog%20Bot%200.3.png)
+[![Run on Repl.it](https://repl.it/badge/github/HereJohnnyboi/Frog-Bot-2.0)](https://repl.it/github/HereJohnnyboi/Frog-Bot-2.0)
