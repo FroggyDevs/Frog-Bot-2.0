@@ -17,9 +17,32 @@ To create your own version of Frog Bot on Replit, click this button to create a 
 
 [![Run on Repl.it](https://repl.it/badge/github/HereJohnnyboi/Frog-Bot-2.0)](https://repl.it/github/HereJohnnyboi/Frog-Bot-2.0)
 
-When the repository is finished cloning,
+When the repository is finished cloning, go to the packages menu from the button on the left. When importing packages, search for them, import the correct one, and wait until the console says it's done importing. Import the following packages:
 
+- Flask,
+- PyNaCl,
+- youtube_dl,
+- discord.py,
+- and PRAW.
+
+When done importing packages, scroll all the way down and replace 
+```
+bot.run(token)
+```
+with
+```
+bot.run("number")
+```
+with number being your application's token in quotes. When you are ready, click run and watch the magic happen. 
+
+##### REMEMBER: You may not use this for commercial use. If you are to copy/change this work, you must give credit to me.
+
+
+\
 ![Frog Bot 2.0 Update 0.3 Flyer](https://raw.githubusercontent.com/HereJohnnyboi/Frog-Bot-2.0/HereJohnnyboi-flyers/Frog%20Bot%200.3.png)
-#### License
+
+
+
+### License
 
 This program is open source and licensed under ther GNU Affero General Public License v3.0. You can view, copy, edit, and distribute parts of this software. However, in doing so you must disclose the source (that it was made by me) and if you publish your version of my work, you must publish it with the same license. If you would like more information regarding the GNU Affero General Public License v3.0, please look at the [License File.](https://github.com/HereJohnnyboi/Frog-Bot-2.0/blob/main/LICENSE)
