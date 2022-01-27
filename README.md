@@ -9,9 +9,17 @@ Frog Bot 2.0 is a discord bot that can add some fun to your server! It has many 
 To get the bot and learn more about The Froggy Gang and Frog Bot, go to [The Froggy Gang.](https://sites.google.com/view/the-froggy-gang/home)
 To view a full command changelog, go to [Frog Bot 2.0 Changelog.](https://docs.google.com/document/d/1Lo62dreCjfNr0GNWGwCid1ZX-cgBqMz1xsxHmNZHhJk/edit?usp=sharing)
 
-![Frog Bot 2.0 Update 0.3 Flyer](https://raw.githubusercontent.com/HereJohnnyboi/Frog-Bot-2.0/HereJohnnyboi-flyers/Frog%20Bot%200.3.png)
+## How to create your version of Frog Bot 2.0!
+
+Remember that you need an established discord application for this to work. For a full tutorial, I also have a tutorial page on this repository.
+
+To create your own version of Frog Bot on Replit, click this button to create a copy of my code on Replit.
+
 [![Run on Repl.it](https://repl.it/badge/github/HereJohnnyboi/Frog-Bot-2.0)](https://repl.it/github/HereJohnnyboi/Frog-Bot-2.0)
 
-## License
+When the repository is finished cloning,
+
+![Frog Bot 2.0 Update 0.3 Flyer](https://raw.githubusercontent.com/HereJohnnyboi/Frog-Bot-2.0/HereJohnnyboi-flyers/Frog%20Bot%200.3.png)
+#### License
 
 This program is open source and licensed under ther GNU Affero General Public License v3.0. You can view, copy, edit, and distribute parts of this software. However, in doing so you must disclose the source (that it was made by me) and if you publish your version of my work, you must publish it with the same license. If you would like more information regarding the GNU Affero General Public License v3.0, please look at the [License File.](https://github.com/HereJohnnyboi/Frog-Bot-2.0/blob/main/LICENSE)
