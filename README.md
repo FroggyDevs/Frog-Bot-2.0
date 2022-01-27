@@ -11,7 +11,7 @@ To view a full command changelog, go to [Frog Bot 2.0 Changelog.](https://docs.g
 
 ## How to create your version of Frog Bot 2.0!
 
-Remember that you need an established discord application for this to work. For a full tutorial, I also have a tutorial page on this repository.
+Remember that you need an established discord application for this to work. For a full tutorial, I also have a [tutorial page](https://github.com/HereJohnnyboi/Frog-Bot-2.0/blob/main/Tutorial.md) on this repository.
 
 To create your own version of Frog Bot on Replit, click this button to create a copy of my code on Replit.
 
