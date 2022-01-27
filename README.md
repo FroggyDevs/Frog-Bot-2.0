@@ -14,4 +14,4 @@ To view a full command changelog, go to [Frog Bot 2.0 Changelog.](https://docs.g
 
 ## License
 
-This program is open source and licensed under ther GNU Affero General Public License v3.0. You can view, copy, edit, and distribute parts of this software. However, in doing so you must disclose the source (that it was made by me) and if you publish your version of my work, you must publish it with the same license. If you would like more information regarding the GNU Affero General Public License v3.0, please look at the [License File]().
+This program is open source and licensed under ther GNU Affero General Public License v3.0. You can view, copy, edit, and distribute parts of this software. However, in doing so you must disclose the source (that it was made by me) and if you publish your version of my work, you must publish it with the same license. If you would like more information regarding the GNU Affero General Public License v3.0, please look at the [License File.](https://github.com/HereJohnnyboi/Frog-Bot-2.0/blob/main/LICENSE)
