@@ -17,18 +17,18 @@ To create your own version of Frog Bot on Replit, click this button to create a 
 
 [![Run on Repl.it](https://repl.it/badge/github/HereJohnnyboi/Frog-Bot-2.0)](https://repl.it/github/HereJohnnyboi/Frog-Bot-2.0)
 
-When the repository is finished cloning, you will be prompted to configure the run button. If this is the case, type in `python main.py` and click "Done". The repl may reload and save. After that, go to the packages menu from the button on the left. When importing packages, search for them, import the correct one, and wait until the console says it's done importing. Import the following packages:
+When the repository is finished cloning, you will be prompted to configure the run button. If this is the case, type in `python main.py` and click "Done". The repl may reload and save. After that, click on shell. For the code to work, you must import packages. To import a package into the Repl, type `pip install packageName` into the shell, with `packageName` being the name of the package that needs to be installed. Import the following packages:
 
-- Flask,
-- PyNaCl,
-- youtube_dl,
-- discord.py,
-- and PRAW.
+1. **Flask**
+2. **PyNaCl**
+3. **youtube_dl**
+4. **discord.py**
+5. **praw**
 
 When done importing packages, scroll all the way down and replace `bot.run(token)`
 with `bot.run("number")`, with `"number"` being your application's token in quotes. When you are ready, click run and watch the magic happen. 
 
-##### REMEMBER: You may not use this for commercial use. If you are to copy/change this work, you must give credit to me.
+##### REMEMBER: You may not use this for commercial use. If you are to copy/change and then distribute this work, you must give credit to me and publish it under the sames license.
 
 
 \
