@@ -875,8 +875,6 @@ async def ban(ctx, member: discord.Member, *, reason=None):
 bot.author_id = 854898025893199913
 
 keep_alive()
-oldToken = os.environ['OLDTOKEN']
-token = os.environ['TOKEN']
 @bot.event
 async def on_ready():
     await bot.change_presence(activity=discord.Streaming(name="-help", url="http://www.twitch.tv/accountname"))
