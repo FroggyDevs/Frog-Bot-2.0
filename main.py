@@ -1,58 +1,45 @@
 """
 
+
 Frog Bot 2.0
 Stable Build
-Beta 0.3
-Released
+Beta 0.4
+Released February 1, 2021
+Code by Jonathan Creado
+
+
 
 """
 
-
+#Importing Modules
 from keep_alive import keep_alive
+import discord
+from discord.ext import commands
+import youtube_dl
+from urllib import parse, request
 import asyncio
+import random
 import functools
 import itertools
-import math
-import random
-import discord
-import youtube_dl
 from async_timeout import timeout
-from discord.ext import commands
-import datetime
+import math
+from pretty_help import DefaultMenu, PrettyHelp
 import requests
-import os
 import json
-from urllib import parse, request
 import re
+import os
+
+#Defining Bot and client
+bot = commands.Bot(command_prefix="frog ", case_insensitive=True)
+client = bot
 
 
-
-
-def clear():
-  os.system("clear")
-
-
-clear()
-
-
-
-
-
-
-
-
-# Silence useless bug reports messages
+#Voice Stuff
 youtube_dl.utils.bug_reports_message = lambda: ''
-
-
 class VoiceError(Exception):
     pass
-
-
 class YTDLError(Exception):
     pass
-
-
 class YTDLSource(discord.PCMVolumeTransformer):
     YTDL_OPTIONS = {
         'format': 'bestaudio/best',
@@ -285,7 +272,7 @@ class VoiceState:
             await self.voice.disconnect()
             self.voice = None
 
-
+#Music Commands
 class Music(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
@@ -313,7 +300,21 @@ class Music(commands.Cog):
         ctx.voice_state = self.get_voice_state(ctx)
 
     async def cog_command_error(self, ctx: commands.Context, error: commands.CommandError):
-        await ctx.send('An error occurred: {}'.format(str(error)))
+ #       await ctx.send('An error occurred: {}'.format(str(error)))
+        if isinstance(error, commands.CommandOnCooldown):
+            message = f"This command is on cooldown. Please try again after {round(error.retry_after, 1)} seconds."
+        elif isinstance(error, commands.MissingPermissions):
+            message = "You are missing the required permissions to run this command!"
+        elif isinstance(error, commands.MissingRequiredArgument):
+            message = f"Missing a required argument: {error.param}"
+        elif isinstance(error, commands.ConversionError):
+            message = str(error)
+        else:
+            message = 'An error occurred: {}'.format(str(error))
+
+        await ctx.send(message)
+
+
 
     @commands.command(name='join', invoke_without_subcommand=True)
     async def _join(self, ctx: commands.Context):
@@ -514,71 +515,237 @@ class Music(commands.Cog):
                 raise commands.CommandError('Bot is already in a voice channel.')
 
 
-bot = commands.Bot('-', description='Beta 0.3', case_insensitive=True)
-bot.add_cog(Music(bot))
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+#Utility Commands
+class Utility(commands.Cog):
+    def __init__(self, bot: commands.Bot):
+        self.bot = bot
+        self.voice_states = {}
+
+    def get_voice_state(self, ctx: commands.Context):
+        state = self.voice_states.get(ctx.guild.id)
+        if not state:
+            state = VoiceState(self.bot, ctx)
+            self.voice_states[ctx.guild.id] = state
+
+        return state
+
+    def cog_unload(self):
+        for state in self.voice_states.values():
+            self.bot.loop.create_task(state.stop())
+
+    def cog_check(self, ctx: commands.Context):
+        if not ctx.guild:
+            raise commands.NoPrivateMessage('This command can\'t be used in DM channels.')
+
+        return True
+
+    async def cog_command_error(self, ctx: commands.Context, error: commands.CommandError):
+ #       await ctx.send('An error occurred: {}'.format(str(error)))
+        if isinstance(error, commands.CommandOnCooldown):
+            message = f"This command is on cooldown. Please try again after {round(error.retry_after, 1)} seconds."
+        elif isinstance(error, commands.MissingPermissions):
+            message = "You are missing the required permissions to run this command!"
+        elif isinstance(error, commands.MissingRequiredArgument):
+            message = f"Missing a required argument: {error.param}"
+        elif isinstance(error, commands.ConversionError):
+            message = str(error)
+        else:
+            message = 'An error occurred: {}'.format(str(error))
+        await ctx.send(message)
+
+    @commands.command(pass_context=True)
+    @commands.has_permissions(manage_guild=True)
+    async def clear(self, ctx, limit: int):
+        """Clears the chat of a specified number of messages."""
+        await ctx.channel.purge(limit=limit)
+        await ctx.send('Cleared by {}'.format(ctx.author.mention), delete_after=5)
+
+    @commands.command(
+        help="Shows the ping/latency of the bot in miliseconds.",
+        brief="Shows ping."
+    )
+    async def ping(self, ctx):
+        if round(client.latency * 1000) <= 50:
+            embed=discord.Embed(title="Pong!", description=f":ping_pong: The ping is **{round(client.latency *1000)}** milliseconds!", color=0x44ff44)
+        elif round(client.latency * 1000) <= 100:
+            embed=discord.Embed(title="Pong!", description=f":ping_pong: The ping is **{round(client.latency *1000)}** milliseconds!", color=0xffd000)
+        elif round(client.latency * 1000) <= 200:
+            embed=discord.Embed(title="Pong!", description=f":ping_pong: The ping is **{round(client.latency *1000)}** milliseconds!", color=0xff6600)
+        else:
+            embed=discord.Embed(title="Pong!", description=f":ping_pong: The ping is **{round(client.latency *1000)}** milliseconds!", color=0x990000)
+        await ctx.send(embed=embed)
+
+    @commands.command()
+    async def print(self,ctx, *args):
+        """Prints the specified value back to the channel."""
+        response = ""
+        for arg in args:
+            response = response + " " + arg
+        await ctx.channel.send(response)
+
+    @commands.command()
+    async def stream(self,ctx, stream="repeating..."):
+        """Changes what I am streaming."""
+        await bot.change_presence(activity=discord.Streaming(name=stream, url="http://www.twitch.tv/accountname"))
+        await ctx.message.add_reaction('✅')
+
+    @commands.command()
+    async def timer(self, ctx, left: int, content='repeating...'):
+        """Timer that needs input of seconds and user."""
+#       time.sleep(left)
+#       await ctx.send(content, "Times up!")
+        await ctx.send("This feature is currently being worked on! If you have any suggestions, please use the -suggest command or dm HereJohnnyboi.")
+
+    @commands.command()
+    async def info(self, ctx):
+      """Information about the server."""
+      name = str(ctx.guild.name)
+      description = str(ctx.guild.description)
+
+      owner = str(ctx.guild.owner)
+      id = str(ctx.guild.id)
+      region = str(ctx.guild.region)
+      memberCount = str(ctx.guild.member_count)
+
+      icon = str(ctx.guild.icon_url)
+   
+      embed = discord.Embed(
+          title=name + " Server Information",
+          description=description,
+          color=discord.Color.blue()
+        )
+      embed.set_thumbnail(url=icon)
+      embed.add_field(name="Owner", value=owner, inline=True)
+      embed.add_field(name="Server ID", value=id, inline=True)
+      embed.add_field(name="Region", value=region, inline=True)
+      embed.add_field(name="Member Count", value=memberCount, inline=True)
+      await ctx.send(embed=embed)
 
 
-#Values
-bot_name = [
-  "Frog Bot",
-  "frog bot",
-  "FROG BOT",
-  "Frog bot"
-  ]
+    @commands.command()
+    async def video(self, ctx, *, search):
+        """Seacrches youtube for videos."""
+        query_string = parse.urlencode({'search_query': search})
+        html_content = request.urlopen('http://www.youtube.com/results?' + query_string)
+        # print(html_content.read().decode())
+        search_results = re.findall( r"watch\?v=(\S{11})", html_content.read().decode())
+        print(search_results)
+        await ctx.send('https://www.youtube.com/watch?v=' + search_results[0])
 
-hello = [
-  "Hello",
-  "You called?",
-  "Whadya' want?",
-  "Yes?",
-  "I heard my name called"
+
+    @commands.command()
+    async def shutdown(self,ctx):
+        """A fail safe"""
+        await ctx.send("Shutting down...")
+        exit()
+    
+
+    @commands.command()
+    async def suggest(self,ctx, suggestion=""):
+      """Help me be better by suggesting! Inputs must be in quotes."""
+      stuff = "\n" + suggestion
+      f = open("suggestions.txt", "a")
+      f.write(stuff)
+      f.close()
+      await ctx.message.add_reaction('✅')
+      await ctx.send("Thank you for suggesting!")
+
+
+
+    @commands.command()
+    @commands.has_guild_permissions(kick_members=True)
+    async def kick(self,ctx, member: discord.Member, *, reason=None):
+      """Kicks a user."""
+      await member.kick(reason=reason)
+      await ctx.message.add_reaction('✅')
+      await ctx.send(f'User {member} has been kicked for the reason of {reason}')
+
+    @commands.command()
+    @commands.has_permissions(ban_members=True)
+    async def ban(self,ctx, member: discord.Member, *, reason=None):
+      """Bans a user."""
+      await member.ban(reason=reason)
+      await ctx.message.add_reaction('✅')
+      await ctx.send(f'User {member} has been banned for the reason of {reason}')
+
+    @commands.command(pass_context=True)
+    @commands.has_permissions(manage_guild=True)
+    async def role(self, ctx, user: discord.Member, role: discord.Role):
+        await user.add_roles(role)
+        await ctx.message.add_reaction('✅')
+        await ctx.send(f"{user.name} has been giving a role called: {role.name}")
+    
+    @commands.command()
+    async def repeat(self, ctx, times: int, content="repeating..."):
+        """Repeats a message multiple times. Message must be in quotes."""
+        for i in range(times):
+            await ctx.send(content)
+
+
+cointoss = ["heads","tails"]
+shoot0 = [
+  "rock",
+  "paper",
+  "scissors"
 ]
 
-starter_nobad = [
-  "Chill",
-  "Please do not curse in the chat",
-  "Don't curse",
-  "Calm down",
-  "I would say use your words, but you're already doing that",
-  "Bruh",
-  "STOP CURSING!",
-  "Calm your ass",
-  "Yo stfu",
-  "Please be quiet dumbass"
-]
+#Math Commands
+class Math(commands.Cog):
+    def __init__(self, bot: commands.Bot):
+        self.bot = bot
+        self.voice_states = {}
 
-uninspire = [
-  "'You are worthless and everything you do sucks.' -Joe Mama",
-  "Give up.",
-  "Stop doing this, you'll be exteremly depressed.",
-  "Suck my-",
-  "Joe Mama",
-  "You suck"
-]
+    def get_voice_state(self, ctx: commands.Context):
+        state = self.voice_states.get(ctx.guild.id)
+        if not state:
+            state = VoiceState(self.bot, ctx)
+            self.voice_states[ctx.guild.id] = state
 
-@bot.command(
-    help="Uses come crazy logic to determine if pong is actually the correct value or not.",
-    brief="Prints pong back to the channel."
-)
-async def ping(ctx):
-    await ctx.channel.send("pong or some shit idk im not dynobot")
+        return state
 
-@bot.command(
-    help="Looks like you need some help.",
-    brief="Prints the list of values back to the channel."
-)
-async def print(ctx, *args):
-    response = ""
-    for arg in args:
-        response = response + " " + arg
-    await ctx.channel.send(response)
+    def cog_unload(self):
+        for state in self.voice_states.values():
+            self.bot.loop.create_task(state.stop())
 
-@bot.command()
-async def stream(ctx, stream="repeating..."):
-    """Changes what I am streaming."""
-    await bot.change_presence(activity=discord.Streaming(name=stream, url="http://www.twitch.tv/accountname"))
-    await ctx.message.add_reaction('✅')
+    def cog_check(self, ctx: commands.Context):
+        if not ctx.guild:
+            raise commands.NoPrivateMessage('This command can\'t be used in DM channels.')
+
+        return True
+
+    async def cog_command_error(self, ctx: commands.Context, error: commands.CommandError):
+ #       await ctx.send('An error occurred: {}'.format(str(error)))
+        if isinstance(error, commands.CommandOnCooldown):
+            message = f"This command is on cooldown. Please try again after {round(error.retry_after, 1)} seconds."
+        elif isinstance(error, commands.MissingPermissions):
+            message = "You are missing the required permissions to run this command!"
+        elif isinstance(error, commands.MissingRequiredArgument):
+            message = f"Missing a required argument: {error.param}"
+        elif isinstance(error, commands.ConversionError):
+            message = str(error)
+        else:
+            message = 'An error occurred: {}'.format(str(error))
+        await ctx.send(message)
+      
+    @commands.command()
+    async def add(self,ctx, left: int, right: int):
+        """Adds two numbers together."""
+        await ctx.send(left + right)
+
+    @commands.command()
+    async def subtract(self,ctx, left: int, right: int):
+        """Subtracts two numbers."""
+        await ctx.send(left - right)
+
+    @commands.command()
+    async def multiply(self,ctx, left: int, right: int):
+        """Multiply two numbers."""
+        await ctx.send(left * right)
+
+    @commands.command()
+    async def divide(self,ctx, left: int, right: int):
+        """Divides two numbers."""
+        await ctx.send(left / right)
 
 def get_quote():
   response = requests.get("https://zenquotes.io/api/random")
@@ -588,294 +755,295 @@ def get_quote():
 
 quote = get_quote()
 
-@bot.command(
-    help="Tries to inspire you.",
-    brief="Speaks an inspirational quote."
-)
-async def inspire(ctx):
-    embed = discord.Embed(title=f"{quote}", color=discord.Color.blue())
-    await ctx.send(embed=embed)
+#Helpful Commands
+class Helpful(commands.Cog):
+    def __init__(self, bot: commands.Bot):
+        self.bot = bot
+        self.voice_states = {}
 
-@bot.command(
-    help="isfpx iki ql nzfomjugdqo trspwj hcetbkdrqs.",
-    brief="Displays the code website."
-)
-async def code(ctx):
-    await ctx.channel.send("www.cryptii.com")
+    def get_voice_state(self, ctx: commands.Context):
+        state = self.voice_states.get(ctx.guild.id)
+        if not state:
+            state = VoiceState(self.bot, ctx)
+            self.voice_states[ctx.guild.id] = state
+
+        return state
+
+    def cog_unload(self):
+        for state in self.voice_states.values():
+            self.bot.loop.create_task(state.stop())
+
+    def cog_check(self, ctx: commands.Context):
+        if not ctx.guild:
+            raise commands.NoPrivateMessage('This command can\'t be used in DM channels.')
+
+        return True
+
+    async def cog_command_error(self, ctx: commands.Context, error: commands.CommandError):
+ #       await ctx.send('An error occurred: {}'.format(str(error)))
+        if isinstance(error, commands.CommandOnCooldown):
+            message = f"This command is on cooldown. Please try again after {round(error.retry_after, 1)} seconds."
+        elif isinstance(error, commands.MissingPermissions):
+            message = "You are missing the required permissions to run this command!"
+        elif isinstance(error, commands.MissingRequiredArgument):
+            message = f"Missing a required argument: {error.param}"
+        elif isinstance(error, commands.ConversionError):
+            message = str(error)
+        else:
+            message = 'An error occurred: {}'.format(str(error))
+        await ctx.send(message)
+
+    @commands.command()
+    async def inspire(self,ctx):
+        """Sends an inspirational quote."""
+        embed = discord.Embed(title=f"{quote}", color=discord.Color.blue())
+        await ctx.send(embed=embed)
+
+    @commands.command()
+    async def coinflip(self,ctx):
+        """Flips a coin"""
+        coin = random.choice(cointoss)
+        if coin == "heads":
+          embed = discord.Embed(title=f"Heads",color=discord.Color.blue())
+          embed.set_thumbnail(url="https://m.media-amazon.com/images/I/51xs7F+tP5L._AC_.jpg")
+          await ctx.send(embed=embed)
+        else:
+          embed = discord.Embed(title=f"Tails",color=discord.Color.blue())
+          embed.set_thumbnail(url="https://m.media-amazon.com/images/I/51NyMaKLydL._AC_.jpg")
+          await ctx.send(embed=embed)
+
+    @commands.command()
+    async def fax(self,ctx):
+      """Fax"""
+      await ctx.send("Matthew is good")
 
 
-@bot.command()
-async def add(ctx, left: int, right: int):
-        """Adds two numbers together."""
-        await ctx.send(left + right)
+    @commands.command()
+    async def rps(self,ctx):
+        """ROCK PAPER SCISSORS SHOOT!!!!"""
+        shoot = random.choice(shoot0)
+        if shoot == "rock":
+          embed = discord.Embed(title=f"Rock",color=discord.Color.blue())
+          embed.set_thumbnail(url="https://m.media-amazon.com/images/I/61m9jG+jj-L._AC_SY355_.jpg")
+          await ctx.send(embed=embed)
+        if shoot == "paper":
+          embed = discord.Embed(title=f"Paper",color=discord.Color.blue())
+          embed.set_thumbnail(url="https://cdn.pixabay.com/photo/2017/08/11/14/02/paper-2631126_1280.jpg")
+          await ctx.send(embed=embed)
+        if shoot == "scissors":
+          embed = discord.Embed(title=f"Scissors",color=discord.Color.blue())
+          embed.set_thumbnail(url="https://upload.wikimedia.org/wikipedia/commons/thumb/7/76/Pair_of_scissors_with_black_handle%2C_2015-06-07.jpg/1200px-Pair_of_scissors_with_black_handle%2C_2015-06-07.jpg")
+          await ctx.send(embed=embed)
 
-@bot.command()
-async def repeat(ctx, times: int, content="repeating..."):
-    """Repeats a message multiple times. Message must be in quotes."""
-    for i in range(times):
-        await ctx.send(content)
+#Social Commands
+class Social(commands.Cog):
+    def __init__(self, bot: commands.Bot):
+        self.bot = bot
+        self.voice_states = {}
 
-@bot.command()
-async def subtract(ctx, left: int, right: int):
-        """Subtracts two numbers."""
-        await ctx.send(left - right)
+    def get_voice_state(self, ctx: commands.Context):
+        state = self.voice_states.get(ctx.guild.id)
+        if not state:
+            state = VoiceState(self.bot, ctx)
+            self.voice_states[ctx.guild.id] = state
 
-@bot.command()
-async def multiply(ctx, left: int, right: int):
-        """Multiply two numbers."""
-        await ctx.send(left * right)
+        return state
 
-@bot.command()
-async def divide(ctx, left: int, right: int):
-        """Divides two numbers."""
-        await ctx.send(left / right)
+    def cog_unload(self):
+        for state in self.voice_states.values():
+            self.bot.loop.create_task(state.stop())
 
-@bot.command()
-async def lol(ctx):
-    """Ha"""
-    await ctx.send("HA")
+    def cog_check(self, ctx: commands.Context):
+        if not ctx.guild:
+            raise commands.NoPrivateMessage('This command can\'t be used in DM channels.')
 
-@bot.command()
-async def lmao(ctx):
-    """HAHA"""
-    content="HAHA"
-    for i in range(5):
-        await ctx.send(content)
+        return True
 
-@bot.command()
-async def lmfao(ctx):
-    """HAHAHAHAHAHAHAHA"""
-    content="HAHA"
-    for i in range(100):
-        await ctx.send(content)
+    async def cog_command_error(self, ctx: commands.Context, error: commands.CommandError):
+ #       await ctx.send('An error occurred: {}'.format(str(error)))
+        if isinstance(error, commands.CommandOnCooldown):
+            message = f"This command is on cooldown. Please try again after {round(error.retry_after, 1)} seconds."
+        elif isinstance(error, commands.MissingPermissions):
+            message = "You are missing the required permissions to run this command!"
+        elif isinstance(error, commands.MissingRequiredArgument):
+            message = f"Missing a required argument: {error.param}"
+        elif isinstance(error, commands.ConversionError):
+            message = str(error)
+        else:
+            message = 'An error occurred: {}'.format(str(error))
+        await ctx.send(message)
 
-@bot.command()
-async def onigai(ctx):
-    """ONI GAI"""
-    await ctx.send('ONI GAI')
+    @commands.command()
+    async def lol(self,ctx):
+        """Ha"""
+        await ctx.send("HA")
 
-@bot.command()
-async def ribbit(ctx):
-    """What do you expect, i'm a frog."""
-    content="Ribbit"
-    await ctx.message.add_reaction('🐸')
-    for i in range(2):
-        await ctx.send(content)
+    @commands.command()
+    async def lmao(self,ctx):
+        """HAHA"""
+        content="HAHA"
+        for i in range(5):
+            await ctx.send(content)
 
-@bot.command()
-async def timer(ctx, left: int, content='repeating...'):
-    """Timer that needs input of seconds and user."""
-#    time.sleep(left)
-#    await ctx.send(content, "Times up!")
-    await ctx.send("This feature is currently being worked on! If you have any suggestions, please use the -suggest command or dm HereJohnnyboi.")
+    @commands.command()
+    async def lmfao(self,ctx):
+        """HAHAHAHAHAHAHAHA"""
+        content="HAHA"
+        for i in range(100):
+            await ctx.send(content)
+    
+    @commands.command()
+    async def onigai(self,ctx):
+        """ONI GAI"""
+        await ctx.send('ONI GAI')
 
-@bot.command()
-async def nou(ctx):
-    """NO U!!!"""
-    embed = discord.Embed(title=f"NO U",color=discord.Color.blue())
-    embed.set_thumbnail(url="https://m.media-amazon.com/images/I/515EBaHdMoL._AC_SL1000_.jpg")
-    await ctx.send(embed=embed)
+    @commands.command()
+    async def ribbit(self,ctx):
+        """What do you expect, i'm a frog."""
+        content="Ribbit"
+        await ctx.message.add_reaction('🐸')
+        for i in range(2):
+            await ctx.send(content)
 
-@bot.command()
-async def notfunny(ctx):
-    """Not funny."""
-    embed = discord.Embed(title=f"No haha",color=discord.Color.blue())
-    embed.set_thumbnail(url="https://c.tenor.com/BM-QtYCZIloAAAAM/not-funny-didnt-laugh.gif")
-    await ctx.send(embed=embed)
+    @commands.command()
+    async def nou(self,ctx):
+        """NO U!!!"""
+        embed = discord.Embed(title=f"NO U",color=discord.Color.blue())
+        embed.set_thumbnail(url="https://m.media-amazon.com/images/I/515EBaHdMoL._AC_SL1000_.jpg")
+        await ctx.send(embed=embed)
 
-@bot.command()
-async def info(ctx):
-    """Displays server info."""
-    embed = discord.Embed(title=f"{ctx.guild.name}", description="Frog Gang 4 life btw", timestamp=datetime.datetime.utcnow(), color=discord.Color.blue())
-    embed.add_field(name="Server created at", value=f"{ctx.guild.created_at}")
-    embed.add_field(name="Server Owner", value=f"{ctx.guild.owner}")
-    embed.add_field(name="Server Region", value=f"{ctx.guild.region}")
-    embed.add_field(name="Server ID", value=f"{ctx.guild.id}")
-    embed.set_thumbnail(url="https://media1.giphy.com/media/Ju7l5y9osyymQ/200.gif")
-    await ctx.send(embed=embed)
+    @commands.command()
+    async def notfunny(self,ctx):
+        """Not funny."""
+        embed = discord.Embed(title=f"No haha",color=discord.Color.blue())
+        embed.set_thumbnail(url="https://c.tenor.com/BM-QtYCZIloAAAAM/not-funny-didnt-laugh.gif")
+        await ctx.send(embed=embed)
 
-@bot.command()
-async def video(ctx, *, search):
-    """Seacrches youtube for videos."""
-    query_string = parse.urlencode({'search_query': search})
-    html_content = request.urlopen('http://www.youtube.com/results?' + query_string)
-    # print(html_content.read().decode())
-    search_results = re.findall( r"watch\?v=(\S{11})", html_content.read().decode())
-    print(search_results)
-    await ctx.send('https://www.youtube.com/watch?v=' + search_results[0])
+    @commands.command()
+    async def gasp(self,ctx):
+        """Gasp!"""
+        embed = discord.Embed(title=f"*Gasp*",color=discord.Color.blue())
+        embed.set_thumbnail(url="https://wp.wwu.edu/emmettpaige/files/2018/11/cropped-pika-2i0clzo.jpg")
+        await ctx.send(embed=embed)
 
-uninspire1 = [
-  "uninspire"
-]
+    @commands.command()
+    async def fu(self,ctx):
+      """Fuc..."""
+      await ctx.send(":middle_finger:")
 
-@bot.listen()
-async def on_message(message):
-#    if any(word in message.content for word in bot_name):
-#      await message.channel.send(random.choice(hello))
-#    if any(word in message.content for word in bad_words):
-#      await message.channel.send(random.choice(starter_nobad))
-    if any(word in message.content for word in uninspire1):
-      await message.channel.send(random.choice(uninspire))
+    @commands.command()
+    async def smexy(self,ctx):
+      """uhhh..."""
+      await ctx.message.add_reaction('😏')
+      await ctx.send(":smirk:")
 
-@bot.command()
-async def shutdown(ctx):
-    """A fail safe"""
-    await ctx.send("Shutting down...")
-    exit()
-
-cointoss = ["heads","tails"]
-
-@bot.command()
-async def coinflip(ctx):
-    """Flips a coin"""
-    coin = random.choice(cointoss)
-    if coin == "heads":
-      embed = discord.Embed(title=f"Heads",color=discord.Color.blue())
-      embed.set_thumbnail(url="https://m.media-amazon.com/images/I/51xs7F+tP5L._AC_.jpg")
+    @commands.command()
+    async def deez(self,ctx):
+      """Hmmmm"""
+      embed = discord.Embed(title=f"",color=discord.Color.blue())
+      embed.set_thumbnail(url="https://pyxis.nymag.com/v1/imgs/a99/ea4/cc70e8f3fbc2b8c891d33b6f0b7bcab837-23-deez-nuts-lg.2x.h473.w710.jpg")
       await ctx.send(embed=embed)
-    else:
-      embed = discord.Embed(title=f"Tails",color=discord.Color.blue())
-      embed.set_thumbnail(url="https://m.media-amazon.com/images/I/51NyMaKLydL._AC_.jpg")
+
+
+
+#Reddit Commands
+class Reddit(commands.Cog):
+    def __init__(self, bot: commands.Bot):
+        self.bot = bot
+        self.voice_states = {}
+
+    def get_voice_state(self, ctx: commands.Context):
+        state = self.voice_states.get(ctx.guild.id)
+        if not state:
+            state = VoiceState(self.bot, ctx)
+            self.voice_states[ctx.guild.id] = state
+
+        return state
+
+    def cog_unload(self):
+        for state in self.voice_states.values():
+            self.bot.loop.create_task(state.stop())
+
+    def cog_check(self, ctx: commands.Context):
+        if not ctx.guild:
+            raise commands.NoPrivateMessage('This command can\'t be used in DM channels.')
+
+        return True
+
+    async def cog_command_error(self, ctx: commands.Context, error: commands.CommandError):
+ #       await ctx.send('An error occurred: {}'.format(str(error)))
+        if isinstance(error, commands.CommandOnCooldown):
+            message = f"This command is on cooldown. Please try again after {round(error.retry_after, 1)} seconds."
+        elif isinstance(error, commands.MissingPermissions):
+            message = "You are missing the required permissions to run this command!"
+        elif isinstance(error, commands.MissingRequiredArgument):
+            message = f"Missing a required argument: {error.param}"
+        elif isinstance(error, commands.ConversionError):
+            message = str(error)
+        else:
+            message = 'An error occurred: {}'.format(str(error))
+        await ctx.send(message)
+
+    @commands.command()
+    async def joke(self,ctx):
+      """Finds a joke from r/dadjokes."""
+      import praw
+      reddit = praw.Reddit(client_id='Cm7end5jxX5qTbtAbb92xA', client_secret='UPG8USyN1uml4SZpVRQBZSgDxtYCeQ', user_agent='Frog_Bot')
+      joketitle = []
+      jokebody = []
+      ml_subreddit = reddit.subreddit('dadjokes')
+      for post in ml_subreddit.hot(limit=100):
+        joketitle.append([post.title])
+        jokebody.append([post.selftext])
+      jokenum = random.randint(0,100)
+      fjoketitle = []
+      fjokebody = []
+      fjoketitle.append(joketitle[jokenum])
+      fjokebody.append(jokebody[jokenum])
+      embed = discord.Embed(title=fjoketitle, description=fjokebody, color=discord.Color.blue())
       await ctx.send(embed=embed)
 
-shoot0 = [
-  "rock",
-  "paper",
-  "scissors"
-]
 
-@bot.command()
-async def rps(ctx):
-    """ROCK PAPER SCISSORS SHOOT!!!!"""
-    shoot = random.choice(shoot0)
-    if shoot == "rock":
-      embed = discord.Embed(title=f"Rock",color=discord.Color.blue())
-      embed.set_thumbnail(url="https://m.media-amazon.com/images/I/61m9jG+jj-L._AC_SY355_.jpg")
-      await ctx.send(embed=embed)
-    if shoot == "paper":
-      embed = discord.Embed(title=f"Paper",color=discord.Color.blue())
-      embed.set_thumbnail(url="https://cdn.pixabay.com/photo/2017/08/11/14/02/paper-2631126_1280.jpg")
-      await ctx.send(embed=embed)
-    if shoot == "scissors":
-      embed = discord.Embed(title=f"Scissors",color=discord.Color.blue())
-      embed.set_thumbnail(url="https://upload.wikimedia.org/wikipedia/commons/thumb/7/76/Pair_of_scissors_with_black_handle%2C_2015-06-07.jpg/1200px-Pair_of_scissors_with_black_handle%2C_2015-06-07.jpg")
+    @commands.command()
+    async def lpt(self,ctx):
+      """Finds a life pro tip from r/LifeProTips."""
+      import praw
+      reddit = praw.Reddit(client_id='Cm7end5jxX5qTbtAbb92xA', client_secret='UPG8USyN1uml4SZpVRQBZSgDxtYCeQ', user_agent='Frog_Bot')
+      lpttitle = []
+      lptbody = []
+      ml_subreddit = reddit.subreddit('LifeProTips')
+      for post in ml_subreddit.hot(limit=100):
+        lpttitle.append([post.title])
+        lptbody.append([post.selftext])
+      lptnum = random.randint(0,100)
+      flpttitle = []
+      flptbody = []
+      flpttitle.append(lpttitle[lptnum])
+      flptbody.append(lptbody[lptnum])
+      embed = discord.Embed(title=flpttitle, description=flptbody, color=discord.Color.blue())
       await ctx.send(embed=embed)
 
-@bot.command()
-async def suggest(ctx, suggestion=""):
-  """Help me be better by suggesting! Inputs must be in quotes."""
-  stuff = "\n" + suggestion
-  f = open("suggestions.txt", "a")
-  f.write(stuff)
-  f.close()
-  await ctx.message.add_reaction('✅')
-  await ctx.send("Thank you for suggesting!")
 
-@bot.command()
-async def ian(ctx):
-    """When you Ian."""
-    embed = discord.Embed(title=f"Ian Moment",color=discord.Color.blue())
-    embed.set_thumbnail(url="ian.jpg")
-    await ctx.send(embed=embed)
+#Help Menu
+menu = DefaultMenu('◀️', '▶️', '❌') # You can copy-paste any icons you want.
+bot.help_command = PrettyHelp(navigation=menu, color=discord.Colour.blue())
 
-@bot.command()
-async def gasp(ctx):
-    """Gasp!"""
-    embed = discord.Embed(title=f"*Gasp*",color=discord.Color.blue())
-    embed.set_thumbnail(url="https://wp.wwu.edu/emmettpaige/files/2018/11/cropped-pika-2i0clzo.jpg")
-    await ctx.send(embed=embed)
-
-@bot.command()
-async def fu(ctx):
-  """Fuc..."""
-  await ctx.send(":middle_finger:")
-
-@bot.command()
-async def smexy(ctx):
-  """uhhh..."""
-  await ctx.message.add_reaction('😏')
-  await ctx.send(":smirk:")
-
-@bot.command()
-async def deez(ctx):
-  """Hmmmm"""
-  embed = discord.Embed(title=f"",color=discord.Color.blue())
-  embed.set_thumbnail(url="https://pyxis.nymag.com/v1/imgs/a99/ea4/cc70e8f3fbc2b8c891d33b6f0b7bcab837-23-deez-nuts-lg.2x.h473.w710.jpg")
-  await ctx.send(embed=embed)
-
-@bot.command()
-async def uninspire(ctx):
-  """Uninspires you."""
-  await ctx.send(random.choice(uninspire))
-
-@bot.command()
-async def fax(ctx):
-  """Fax"""
-  await ctx.send("Matthew is good")
-
-
-
-
-
-@bot.command()
-async def joke(ctx):
-  """Finds a joke from r/dadjokes."""
-  import praw
-  reddit = praw.Reddit(client_id='Cm7end5jxX5qTbtAbb92xA', client_secret='UPG8USyN1uml4SZpVRQBZSgDxtYCeQ', user_agent='Frog_Bot')
-  joketitle = []
-  jokebody = []
-  ml_subreddit = reddit.subreddit('dadjokes')
-  for post in ml_subreddit.hot(limit=100):
-    joketitle.append([post.title])
-    jokebody.append([post.selftext])
-  jokenum = random.randint(0,100)
-  fjoketitle = []
-  fjokebody = []
-  fjoketitle.append(joketitle[jokenum])
-  fjokebody.append(jokebody[jokenum])
-  embed = discord.Embed(title=fjoketitle, description=fjokebody, color=discord.Color.blue())
-  await ctx.send(embed=embed)
-
-@bot.command()
-async def lpt(ctx):
-  """Finds a life pro tip from r/LifeProTips."""
-  import praw
-  reddit = praw.Reddit(client_id='Cm7end5jxX5qTbtAbb92xA', client_secret='UPG8USyN1uml4SZpVRQBZSgDxtYCeQ', user_agent='Frog_Bot')
-  lpttitle = []
-  lptbody = []
-  ml_subreddit = reddit.subreddit('LifeProTips')
-  for post in ml_subreddit.hot(limit=100):
-    lpttitle.append([post.title])
-    lptbody.append([post.selftext])
-  lptnum = random.randint(0,100)
-  flpttitle = []
-  flptbody = []
-  flpttitle.append(lpttitle[lptnum])
-  flptbody.append(lptbody[lptnum])
-  embed = discord.Embed(title=flpttitle, description=flptbody, color=discord.Color.blue())
-  await ctx.send(embed=embed)
-
-@bot.command()
-@commands.has_permissions(manage_guild=True)
-async def kick(ctx, member: discord.Member, *, reason=None):
-  """Kicks a user."""
-  await member.kick(reason=reason)
-  await ctx.message.add_reaction('✅')
-  await ctx.send(f'User {member} has been kicked for the reason of {reason}')
-
-@bot.command()
-@commands.has_permissions(manage_guild=True)
-async def ban(ctx, member: discord.Member, *, reason=None):
-  """Bans a user."""
-  await member.ban(reason=reason)
-  await ctx.message.add_reaction('✅')
-  await ctx.send(f'User {member} has been banned for the reason of {reason}')
-
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+#Id
 bot.author_id = 854898025893199913
 
+#Keps the bot alive using keep_alive.py
 keep_alive()
+
+#Streams
 @bot.event
 async def on_ready():
-    await bot.change_presence(activity=discord.Streaming(name="-help", url="http://www.twitch.tv/accountname"))
-bot.run(token)
+    await bot.change_presence(activity=discord.Streaming(name="frog help", url="http://www.twitch.tv/accountname"))
+
+
+client.add_cog(Utility(client))
+client.add_cog(Music(client))
+client.add_cog(Math(client))
+client.add_cog(Helpful(client))
+client.add_cog(Social(client))
+client.add_cog(Reddit(client))
+client.run(token)
