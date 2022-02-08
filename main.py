@@ -3,15 +3,15 @@
 
 Frog Bot 2.0
 Stable Build
-Beta 0.4
-Released February 1, 2021
+Beta Patch 0.4
+Updated February 8, 2021
 Code by Jonathan Creado
 
 
 
 """
 
-#Importing Modules
+import os
 from keep_alive import keep_alive
 import discord
 from discord.ext import commands
@@ -27,19 +27,27 @@ from pretty_help import DefaultMenu, PrettyHelp
 import requests
 import json
 import re
-import os
 
-#Defining Bot and client
-bot = commands.Bot(command_prefix="frog ", case_insensitive=True)
+
+
+intents= discord.Intents.default()
+intents.members = True
+bot = commands.Bot(command_prefix="frog ", case_insensitive=True, intents=intents)
 client = bot
+bot.author_id = 854898025893199913
 
 
-#Voice Stuff
 youtube_dl.utils.bug_reports_message = lambda: ''
+
+
 class VoiceError(Exception):
     pass
+
+
 class YTDLError(Exception):
     pass
+
+
 class YTDLSource(discord.PCMVolumeTransformer):
     YTDL_OPTIONS = {
         'format': 'bestaudio/best',
@@ -272,7 +280,7 @@ class VoiceState:
             await self.voice.disconnect()
             self.voice = None
 
-#Music Commands
+
 class Music(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
@@ -514,8 +522,6 @@ class Music(commands.Cog):
             if ctx.voice_client.channel != ctx.author.voice.channel:
                 raise commands.CommandError('Bot is already in a voice channel.')
 
-
-#Utility Commands
 class Utility(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
@@ -601,11 +607,15 @@ class Utility(commands.Cog):
       """Information about the server."""
       name = str(ctx.guild.name)
       description = str(ctx.guild.description)
-
-      owner = str(ctx.guild.owner)
+      
+      if description=="None":
+        description = "No server description."
+      
+      owner = str(client.get_user(int(ctx.guild.owner.id)))
       id = str(ctx.guild.id)
       region = str(ctx.guild.region)
       memberCount = str(ctx.guild.member_count)
+      channels = str(len(ctx.guild.channels))
 
       icon = str(ctx.guild.icon_url)
    
@@ -619,6 +629,7 @@ class Utility(commands.Cog):
       embed.add_field(name="Server ID", value=id, inline=True)
       embed.add_field(name="Region", value=region, inline=True)
       embed.add_field(name="Member Count", value=memberCount, inline=True)
+      embed.add_field(name="Channel Count", value=channels, inline=True)
       await ctx.send(embed=embed)
 
 
@@ -688,8 +699,6 @@ shoot0 = [
   "paper",
   "scissors"
 ]
-
-#Math Commands
 class Math(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
@@ -755,7 +764,6 @@ def get_quote():
 
 quote = get_quote()
 
-#Helpful Commands
 class Helpful(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
@@ -835,7 +843,7 @@ class Helpful(commands.Cog):
           embed.set_thumbnail(url="https://upload.wikimedia.org/wikipedia/commons/thumb/7/76/Pair_of_scissors_with_black_handle%2C_2015-06-07.jpg/1200px-Pair_of_scissors_with_black_handle%2C_2015-06-07.jpg")
           await ctx.send(embed=embed)
 
-#Social Commands
+
 class Social(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
@@ -946,7 +954,7 @@ class Social(commands.Cog):
 
 
 
-#Reddit Commands
+
 class Reddit(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
@@ -1024,21 +1032,15 @@ class Reddit(commands.Cog):
       await ctx.send(embed=embed)
 
 
-#Help Menu
+
 menu = DefaultMenu('◀️', '▶️', '❌') # You can copy-paste any icons you want.
 bot.help_command = PrettyHelp(navigation=menu, color=discord.Colour.blue())
 
-#Id
-bot.author_id = 854898025893199913
 
-#Keps the bot alive using keep_alive.py
 keep_alive()
-
-#Streams
 @bot.event
 async def on_ready():
     await bot.change_presence(activity=discord.Streaming(name="frog help", url="http://www.twitch.tv/accountname"))
-
 
 client.add_cog(Utility(client))
 client.add_cog(Music(client))
