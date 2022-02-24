@@ -4,7 +4,7 @@
 Frog Bot 2.0
 Stable Build
 Beta Patch 0.4
-Updated February 8, 2021
+Updated February 8, 2022
 Code by Jonathan Creado
 
 
