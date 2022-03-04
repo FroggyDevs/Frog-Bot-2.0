@@ -32,7 +32,7 @@ with `bot.run("number")`, with `"number"` being your application's token in quot
 
 
 \
-![Frog Bot 2.0 Update 0.3 Flyer](https://raw.githubusercontent.com/HereJohnnyboi/Frog-Bot-2.0/HereJohnnyboi-flyers/Frog%20Bot%200.3.png)
+![Frog Bot 2.0 Update 0.5 Flyer](https://raw.githubusercontent.com/HereJohnnyboi/Frog-Bot-2.0/HereJohnnyboi-flyers/frog-bot-2.0-0.5.png)
 
 
 
