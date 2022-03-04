@@ -2,7 +2,7 @@
 ##### Current Stable Release: Beta 0.5
 ## Description
 
-Frog Bot 2.0 is a discord bot that can add some fun to your server! It has many uses such as light moderation, reddit scraping, quick reactions, music listening, and oter helpful features! To get the bot click here: [Invite Link.](https://www.google.com/url=https%3A%2F%2Fdiscord.gg%2FZsmcAcmWrA&sa=D&sntz=1&usg=AFQjCNHpQjZgEO7Amn97Djb50gvYaYHdeA) The bot was originally created for The Froggy Gang. It was created using Python and was made on [Replit.](https://replit.com) 
+Frog Bot 2.0 is a discord bot that can add some fun to your server! It has many uses such as light moderation, reddit scraping, quick reactions, music listening, and many other helpful features! To get the bot click here: [Invite Link.](https://www.google.com/url=https%3A%2F%2Fdiscord.gg%2FZsmcAcmWrA&sa=D&sntz=1&usg=AFQjCNHpQjZgEO7Amn97Djb50gvYaYHdeA) The bot was originally created for The Froggy Gang. It was created using Python and was made on [Replit.](https://replit.com) 
 
 ## Website
 
