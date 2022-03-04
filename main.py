@@ -3,8 +3,8 @@
 
 Frog Bot 2.0
 Stable Build
-Beta Patch 0.4
-Updated February 8, 2022
+Beta 0.5- The Media Update
+Updated March 3, 2022
 Code by Jonathan Creado
 
 
@@ -27,8 +27,11 @@ from pretty_help import DefaultMenu, PrettyHelp
 import requests
 import json
 import re
-
-
+import praw
+from datetime import datetime
+from bs4 import BeautifulSoup
+import time
+import math
 
 intents= discord.Intents.default()
 intents.members = True
@@ -36,7 +39,13 @@ bot = commands.Bot(command_prefix="frog ", case_insensitive=True, intents=intent
 client = bot
 bot.author_id = 854898025893199913
 
-
+def convertTuple(tup):
+        # initialize an empty string
+    str = ''
+    for item in tup:
+        str = str + " " + item
+    return str
+  
 youtube_dl.utils.bug_reports_message = lambda: ''
 
 
@@ -377,24 +386,31 @@ class Music(commands.Cog):
     @commands.command(name='now', aliases=['current', 'playing'])
     async def _now(self, ctx: commands.Context):
         """Displays the currently playing song."""
-
         await ctx.send(embed=ctx.voice_state.current.create_embed())
 
-    @commands.command(name='pause')
-    async def _pause(self, ctx: commands.Context):
-        """Pauses the currently playing song."""
-
-        if not ctx.voice_state.is_playing and ctx.voice_state.voice.is_playing():
-            ctx.voice_state.voice.pause()
+    @commands.command()
+    async def pause(self, ctx):
+        """Pauses currently playing song [Format: %pause]"""
+        SongPlaying = ctx.voice_client.is_playing()
+        Paused = ctx.voice_client.is_paused()
+        if Paused != True:
+            ctx.voice_client.pause()
             await ctx.message.add_reaction('⏯')
+        else:
+            if SongPlaying == True:
+                await ctx.send("> The video player is already paused.")
+            else:
+                await ctx.send("> There is no song currently playing.")
 
-    @commands.command(name='resume')
-    async def _resume(self, ctx: commands.Context):
-        """Resumes a currently paused song."""
-
-        if not ctx.voice_state.is_playing and ctx.voice_state.voice.is_paused():
-            ctx.voice_state.voice.resume()
+    @commands.command()
+    async def resume(self, ctx):
+        """Resumes a paused song [Format: %resume]"""
+        Paused = ctx.voice_client.is_paused()
+        if Paused == True:
+            ctx.voice_client.resume()
             await ctx.message.add_reaction('⏯')
+        else:
+            await ctx.send('> The player is not paused')
 
     @commands.command(name='stop')
     async def _stop(self, ctx: commands.Context):
@@ -411,7 +427,6 @@ class Music(commands.Cog):
         """Vote to skip a song. The requester can automatically skip.
         3 skip votes are needed for the song to be skipped.
         """
-
         if not ctx.voice_state.is_playing:
             return await ctx.send('Not playing any music right now...')
 
@@ -582,25 +597,25 @@ class Utility(commands.Cog):
         await ctx.send(embed=embed)
 
     @commands.command()
-    async def print(self,ctx, *args):
+    async def print(self,ctx, *text):
         """Prints the specified value back to the channel."""
-        response = ""
-        for arg in args:
-            response = response + " " + arg
-        await ctx.channel.send(response)
+        await ctx.channel.send(convertTuple(text))
 
     @commands.command()
-    async def stream(self,ctx, stream="repeating..."):
+    async def stream(self,ctx, *stream):
         """Changes what I am streaming."""
-        await bot.change_presence(activity=discord.Streaming(name=stream, url="http://www.twitch.tv/accountname"))
+        await bot.change_presence(activity=discord.Streaming(name=convertTuple(stream), url="http://www.twitch.tv/accountname"))
         await ctx.message.add_reaction('✅')
 
+  
     @commands.command()
-    async def timer(self, ctx, left: int, content='repeating...'):
+    async def timer(self, ctx, wait:int):
         """Timer that needs input of seconds and user."""
-#       time.sleep(left)
-#       await ctx.send(content, "Times up!")
-        await ctx.send("This feature is currently being worked on! If you have any suggestions, please use the -suggest command or dm HereJohnnyboi.")
+        await ctx.message.add_reaction('✅')
+        time.sleep(wait)
+        await ctx.send("Times up!")
+        await ctx.send(ctx.message.author.mention)
+
 
     @commands.command()
     async def info(self, ctx):
@@ -652,9 +667,9 @@ class Utility(commands.Cog):
     
 
     @commands.command()
-    async def suggest(self,ctx, suggestion=""):
-      """Help me be better by suggesting! Inputs must be in quotes."""
-      stuff = "\n" + suggestion
+    async def suggest(self,ctx, *suggestion):
+      """Help me be better by suggesting!"""
+      stuff = "\n" + convertTuple(suggestion)
       f = open("suggestions.txt", "a")
       f.write(stuff)
       f.close()
@@ -669,7 +684,7 @@ class Utility(commands.Cog):
       """Kicks a user."""
       await member.kick(reason=reason)
       await ctx.message.add_reaction('✅')
-      await ctx.send(f'User {member} has been kicked for the reason of {reason}')
+      await ctx.send(f'{member.name} has been kicked for the reason of {reason}')
 
     @commands.command()
     @commands.has_permissions(ban_members=True)
@@ -677,7 +692,7 @@ class Utility(commands.Cog):
       """Bans a user."""
       await member.ban(reason=reason)
       await ctx.message.add_reaction('✅')
-      await ctx.send(f'User {member} has been banned for the reason of {reason}')
+      await ctx.send(f'{member.name} has been banned for the reason of {reason}')
 
     @commands.command(pass_context=True)
     @commands.has_permissions(manage_guild=True)
@@ -687,11 +702,28 @@ class Utility(commands.Cog):
         await ctx.send(f"{user.name} has been giving a role called: {role.name}")
     
     @commands.command()
-    async def repeat(self, ctx, times: int, content="repeating..."):
-        """Repeats a message multiple times. Message must be in quotes."""
-        for i in range(times):
-            await ctx.send(content)
+    async def repeat(self, ctx, times: int, *content):
+        """Repeats a message multiple times."""
+        if times > 100:
+          await ctx.send("You can only repeat things up to 100 times.")
+        else: 
+          for i in range(times):
+            await ctx.send(convertTuple(content))
+    
+    @commands.command()
+    async def icon(self, ctx):
+        """Links the server's icon."""
+        icon_url = ctx.guild.icon_url
+        await ctx.send(icon_url)
 
+    @commands.command()
+    async def avatar(self, ctx, *,  avamember : discord.Member="test"):
+        """Links the specified user's avatar."""
+        if avamember == "test":
+          await ctx.send(ctx.author.avatar_url)
+        else:
+          userAvatarUrl = avamember.avatar_url
+          await ctx.send(userAvatarUrl)
 
 cointoss = ["heads","tails"]
 shoot0 = [
@@ -699,6 +731,16 @@ shoot0 = [
   "paper",
   "scissors"
 ]
+
+roll0 = [
+  "1",
+  "2",
+  "3",
+  "4",
+  "5",
+  "6"
+]
+
 class Math(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
@@ -756,13 +798,33 @@ class Math(commands.Cog):
         """Divides two numbers."""
         await ctx.send(left / right)
 
+    @commands.command()
+    async def sqrt(self, ctx, number: int):
+        '''Calculates the square root of a number.'''
+        await ctx.send(math.sqrt(number))
+      
+    @commands.command()
+    async def tan(self, ctx, number: int):
+        '''Calculates the tangent of a number.'''
+        await ctx.send(round(math.tan(math.radians(number)),2))
+
+    @commands.command()
+    async def rad(self, ctx, number: int):
+        '''Converts given number of degrees into radians.'''
+        await ctx.send(math.radians(number))
+
+    @commands.command()
+    async def deg(self, ctx, number: int):
+        '''Converts given number of radians into degrees.'''
+        await ctx.send(math.degrees(number))
+      
+
+
 def get_quote():
   response = requests.get("https://zenquotes.io/api/random")
   json_data = json.loads(response.text)
   quote = json_data[0]['q'] + " -" + json_data[0]['a']
   return(quote)
-
-quote = get_quote()
 
 class Helpful(commands.Cog):
     def __init__(self, bot: commands.Bot):
@@ -804,7 +866,8 @@ class Helpful(commands.Cog):
     @commands.command()
     async def inspire(self,ctx):
         """Sends an inspirational quote."""
-        embed = discord.Embed(title=f"{quote}", color=discord.Color.blue())
+        embed = discord.Embed(title=f"{get_quote()}", color=discord.Color.blue())
+        embed.set_footer(text=f"Quotes from zenquotes.io")
         await ctx.send(embed=embed)
 
     @commands.command()
@@ -823,7 +886,7 @@ class Helpful(commands.Cog):
     @commands.command()
     async def fax(self,ctx):
       """Fax"""
-      await ctx.send("Matthew is good")
+      await ctx.send("Matoo is good")
 
 
     @commands.command()
@@ -842,6 +905,87 @@ class Helpful(commands.Cog):
           embed = discord.Embed(title=f"Scissors",color=discord.Color.blue())
           embed.set_thumbnail(url="https://upload.wikimedia.org/wikipedia/commons/thumb/7/76/Pair_of_scissors_with_black_handle%2C_2015-06-07.jpg/1200px-Pair_of_scissors_with_black_handle%2C_2015-06-07.jpg")
           await ctx.send(embed=embed)
+
+    @commands.command()
+    async def dice(self,ctx):
+        """Rolls a dice."""
+        shoot = random.choice(roll0)
+        if shoot == "1":
+          embed = discord.Embed(color=discord.Color.blue())
+          embed.set_thumbnail(url="https://w7.pngwing.com/pngs/604/326/png-transparent-dice-dice-1-image-file-formats-rectangle-dice-thumbnail.png")
+          await ctx.send(embed=embed)
+        if shoot == "2":
+          embed = discord.Embed(color=discord.Color.blue())
+          embed.set_thumbnail(url="http://www.clker.com/cliparts/a/Y/E/o/z/t/dice-2-md.png")
+          await ctx.send(embed=embed)
+        if shoot == "3":
+          embed = discord.Embed(color=discord.Color.blue())
+          embed.set_thumbnail(url="http://www.clipartsuggest.com/images/160/dice-3-clip-art-at-clker-com-vector-clip-art-online-royalty-free-UvzDUn-clipart.png")
+          await ctx.send(embed=embed)
+        if shoot == "4":
+          embed = discord.Embed(color=discord.Color.blue())
+          embed.set_thumbnail(url="https://cdn.pixabay.com/photo/2014/04/03/10/24/dice-310335_1280.png")
+          await ctx.send(embed=embed)
+        if shoot == "5":
+          embed = discord.Embed(color=discord.Color.blue())
+          embed.set_thumbnail(url="http://www.clker.com/cliparts/e/y/7/h/W/K/dice-5-hi.png")
+          await ctx.send(embed=embed)
+        if shoot == "6":
+          embed = discord.Embed(color=discord.Color.blue())
+          embed.set_thumbnail(url="http://www.clker.com/cliparts/l/6/4/3/K/H/dice-6-md.png")
+          await ctx.send(embed=embed)
+
+    @commands.command()
+    async def define(self,ctx, worddd=""):
+        """Sends the definition of a word."""
+        
+        def show_origin(soup):
+            try:
+                origin = soup.find('span', {'unbox': 'wordorigin'})
+                print('\nOrigin -> ', origin.text)
+            except AttributeError:
+               pass
+
+
+        def show_definitions(soup):
+            print()
+            global senseList
+            senseList = []
+            senses = soup.find_all('li', class_='sense')
+            for s in senses:
+                definition = s.find('span', class_='def').text
+                senseList.append(definition)
+                
+                # Examples
+                #examples = s.find_all('ul', class_='examples')
+                #for e in examples:
+                #    for ex in e.find_all('li'):
+                #        print('\t-', ex.text)
+
+
+        word_to_search = worddd
+        scrape_url = 'https://www.oxfordlearnersdictionaries.com/definition/english/' + word_to_search
+
+        headers = {"User-Agent": ""}
+        web_response = requests.get(scrape_url, headers=headers)
+
+        if web_response.status_code == 200:
+            soup = BeautifulSoup(web_response.text, 'html.parser')
+
+            try:
+#               show_origin(soup)
+                show_definitions(soup)
+                embed = discord.Embed(title=word_to_search, description=f"-{senseList[0]}", color=discord.Color.blue())
+                embed.set_footer(text=f"Definitions from Oxford's Advanced Learner's Dictionary")
+                await ctx.send(embed=embed)
+            except AttributeError:
+                embed = discord.Embed(title=word_to_search, description='Word not found!!', color=discord.Color.blue())
+                await ctx.send(embed=embed)
+        else:
+            embed = discord.Embed(title=word_to_search, description='Failed to get response...', color=discord.Color.blue())
+            await ctx.send(embed=embed)
+
+
 
 
 class Social(commands.Cog):
@@ -903,7 +1047,8 @@ class Social(commands.Cog):
     @commands.command()
     async def onigai(self,ctx):
         """ONI GAI"""
-        await ctx.send('ONI GAI')
+        embed = discord.Embed(title=f"**ONIGAI**",color=discord.Color.blue())
+        await ctx.send(embed=embed)
 
     @commands.command()
     async def ribbit(self,ctx):
@@ -935,17 +1080,6 @@ class Social(commands.Cog):
         await ctx.send(embed=embed)
 
     @commands.command()
-    async def fu(self,ctx):
-      """Fuc..."""
-      await ctx.send(":middle_finger:")
-
-    @commands.command()
-    async def smexy(self,ctx):
-      """uhhh..."""
-      await ctx.message.add_reaction('😏')
-      await ctx.send(":smirk:")
-
-    @commands.command()
     async def deez(self,ctx):
       """Hmmmm"""
       embed = discord.Embed(title=f"",color=discord.Color.blue())
@@ -954,6 +1088,8 @@ class Social(commands.Cog):
 
 
 
+
+reddit = praw.Reddit(client_id='Cm7end5jxX5qTbtAbb92xA', client_secret='UPG8USyN1uml4SZpVRQBZSgDxtYCeQ', user_agent='Frog_Bot', check_for_async=False)
 
 class Reddit(commands.Cog):
     def __init__(self, bot: commands.Bot):
@@ -992,49 +1128,203 @@ class Reddit(commands.Cog):
             message = 'An error occurred: {}'.format(str(error))
         await ctx.send(message)
 
-    @commands.command()
-    async def joke(self,ctx):
-      """Finds a joke from r/dadjokes."""
-      import praw
-      reddit = praw.Reddit(client_id='Cm7end5jxX5qTbtAbb92xA', client_secret='UPG8USyN1uml4SZpVRQBZSgDxtYCeQ', user_agent='Frog_Bot')
-      joketitle = []
-      jokebody = []
-      ml_subreddit = reddit.subreddit('dadjokes')
-      for post in ml_subreddit.hot(limit=100):
-        joketitle.append([post.title])
-        jokebody.append([post.selftext])
-      jokenum = random.randint(0,100)
-      fjoketitle = []
-      fjokebody = []
-      fjoketitle.append(joketitle[jokenum])
-      fjokebody.append(jokebody[jokenum])
-      embed = discord.Embed(title=fjoketitle, description=fjokebody, color=discord.Color.blue())
-      await ctx.send(embed=embed)
-
 
     @commands.command()
-    async def lpt(self,ctx):
-      """Finds a life pro tip from r/LifeProTips."""
-      import praw
-      reddit = praw.Reddit(client_id='Cm7end5jxX5qTbtAbb92xA', client_secret='UPG8USyN1uml4SZpVRQBZSgDxtYCeQ', user_agent='Frog_Bot')
-      lpttitle = []
-      lptbody = []
-      ml_subreddit = reddit.subreddit('LifeProTips')
-      for post in ml_subreddit.hot(limit=100):
-        lpttitle.append([post.title])
-        lptbody.append([post.selftext])
-      lptnum = random.randint(0,100)
-      flpttitle = []
-      flptbody = []
-      flpttitle.append(lpttitle[lptnum])
-      flptbody.append(lptbody[lptnum])
-      embed = discord.Embed(title=flpttitle, description=flptbody, color=discord.Color.blue())
+    async def joke(self, ctx):
+      """Sends a life pro tip from r/dadjokes."""
+      subreddit = reddit.subreddit("dadjokes")
+      all_subs = []
+      hot = subreddit.hot(limit = 100)
+      for submission in hot:
+          all_subs.append(submission)
+      random_sub = random.choice(all_subs)
+      name = random_sub.title
+      desc = random_sub.selftext
+      embed = discord.Embed(title = name, description=desc, color=discord.Color.green())
+      embed.set_footer(text=f"Asked by {ctx.author.name}")
       await ctx.send(embed=embed)
 
+    @commands.command()
+    async def news(self, ctx):
+      """Sends news from r/worldnews."""
+      subreddit = reddit.subreddit("worldnews")
+      all_subs = []
+      hot = subreddit.hot(limit = 100)
+      for submission in hot:
+          all_subs.append(submission)
+      random_sub = random.choice(all_subs)
+      name = random_sub.title
+      desc = random_sub.selftext
+      embed = discord.Embed(title = name, description=desc, color=discord.Color.green())
+      embed.set_footer(text=f"Asked by {ctx.author.name}")
+      await ctx.send(embed=embed)
+    
+
+    @commands.command()
+    async def lpt(self, ctx):
+      """Sends a life pro tip from r/LifeProTips."""
+      subreddit = reddit.subreddit("LifeProTips")
+      all_subs = []
+      hot = subreddit.hot(limit = 100)
+      for submission in hot:
+          all_subs.append(submission)
+      random_sub = random.choice(all_subs)
+      name = random_sub.title
+      desc = random_sub.selftext
+      embed = discord.Embed(title = name, description=desc, color=discord.Color.green())
+      embed.set_footer(text=f"Asked by {ctx.author.name}")
+      await ctx.send(embed=embed)
+
+  
+    @commands.command()
+    async def meme(self, ctx):
+        """Sends a meme from r/memes."""
+        subreddit = reddit.subreddit("memes")
+        all_subs = []
+        hot = subreddit.hot(limit = 100)
+        for submission in hot:
+            all_subs.append(submission)
+        random_sub = random.choice(all_subs)
+        name = random_sub.title
+        url = random_sub.url
+        embed = discord.Embed(title = name, color=discord.Color.green())
+        embed.set_image(url = url)
+        embed.set_footer(text=f"Asked by {ctx.author.name}")
+        await ctx.send(embed=embed)
+
+    @commands.command()
+    async def guide(self, ctx):
+        """Sends a cool guide from r/coolguides."""
+        subreddit = reddit.subreddit("coolguides")
+        all_subs = []
+        hot = subreddit.hot(limit = 100)
+        for submission in hot:
+            all_subs.append(submission)
+        random_sub = random.choice(all_subs)
+        name = random_sub.title
+        url = random_sub.url
+        embed = discord.Embed(title = name, color=discord.Color.green())
+        embed.set_image(url = url)
+        embed.set_footer(text=f"Asked by {ctx.author.name}")
+        await ctx.send(embed=embed)
+
+    @commands.command()
+    async def pic(self, ctx):
+        """Sends a cool picture from r/pics."""
+        subreddit = reddit.subreddit("pics")
+        all_subs = []
+        hot = subreddit.hot(limit = 100)
+        for submission in hot:
+            all_subs.append(submission)
+        random_sub = random.choice(all_subs)
+        name = random_sub.title
+        url = random_sub.url
+        embed = discord.Embed(title = name, color=discord.Color.green())
+        embed.set_image(url = url)
+        embed.set_footer(text=f"Asked by {ctx.author.name}")
+        await ctx.send(embed=embed)
+
+    @commands.command()
+    async def food(self, ctx):
+        """Sends a picture of food from r/food."""
+        subreddit = reddit.subreddit("food")
+        all_subs = []
+        hot = subreddit.hot(limit = 100)
+        for submission in hot:
+            all_subs.append(submission)
+        random_sub = random.choice(all_subs)
+        name = random_sub.title
+        url = random_sub.url
+        embed = discord.Embed(title = name, color=discord.Color.green())
+        embed.set_image(url = url)
+        embed.set_footer(text=f"Asked by {ctx.author.name}")
+        await ctx.send(embed=embed)
+
+    @commands.command()
+    async def space(self, ctx):
+        """Sends a picture of space from r/spaceporn."""
+        subreddit = reddit.subreddit("spaceporn")
+        all_subs = []
+        hot = subreddit.hot(limit = 100)
+        for submission in hot:
+            all_subs.append(submission)
+        random_sub = random.choice(all_subs)
+        name = random_sub.title
+        url = random_sub.url
+        embed = discord.Embed(title = name, color=discord.Color.green())
+        embed.set_image(url = url)
+        embed.set_footer(text=f"Asked by {ctx.author.name}")
+        await ctx.send(embed=embed)
+
+    @commands.command()
+    async def greentext(self, ctx):
+        """Sends a 4chan story from r/greentext."""
+        subreddit = reddit.subreddit("greentext")
+        all_subs = []
+        hot = subreddit.hot(limit = 100)
+        for submission in hot:
+            all_subs.append(submission)
+        random_sub = random.choice(all_subs)
+        name = random_sub.title
+        url = random_sub.url
+        embed = discord.Embed(title = name, color=discord.Color.green())
+        embed.set_image(url = url)
+        embed.set_footer(text=f"Asked by {ctx.author.name}")
+        await ctx.send(embed=embed)
+
+      
+    @commands.command()
+    async def dog(self, ctx):
+        """Sends a cute dog pic from r/dogpictures."""
+        subreddit = reddit.subreddit("dogpictures")
+        all_subs = []
+        hot = subreddit.hot(limit = 100)
+        for submission in hot:
+            all_subs.append(submission)
+        random_sub = random.choice(all_subs)
+        name = random_sub.title
+        url = random_sub.url
+        embed = discord.Embed(title = name, color=discord.Color.green())
+        embed.set_image(url = url)
+        embed.set_footer(text=f"Asked by {ctx.author.name}")
+        await ctx.send(embed=embed)
+
+    @commands.command()
+    async def cat(self, ctx):
+        """Sends a cute cat pic from r/catpics."""
+        subreddit = reddit.subreddit("catpics")
+        all_subs = []
+        hot = subreddit.hot(limit = 100)
+        for submission in hot:
+            all_subs.append(submission)
+        random_sub = random.choice(all_subs)
+        name = random_sub.title
+        url = random_sub.url
+        embed = discord.Embed(title = name, color=discord.Color.green())
+        embed.set_image(url = url)
+        embed.set_footer(text=f"Asked by {ctx.author.name}")
+        await ctx.send(embed=embed)
+
+
+    @commands.command()
+    async def earth(self, ctx):
+        """Sends a picture from r/earthporn."""
+        subreddit = reddit.subreddit("EarthPorn")
+        all_subs = []
+        hot = subreddit.hot(limit = 100)
+        for submission in hot:
+            all_subs.append(submission)
+        random_sub = random.choice(all_subs)
+        name = random_sub.title
+        url = random_sub.url
+        embed = discord.Embed(title = name, color=discord.Color.green())
+        embed.set_image(url = url)
+        embed.set_footer(text=f"Asked by {ctx.author.name}")
+        await ctx.send(embed=embed)
 
 
 menu = DefaultMenu('◀️', '▶️', '❌') # You can copy-paste any icons you want.
-bot.help_command = PrettyHelp(navigation=menu, color=discord.Colour.blue())
+bot.help_command = PrettyHelp(navigation=menu, color=discord.Colour.green())
 
 
 keep_alive()
@@ -1048,4 +1338,5 @@ client.add_cog(Math(client))
 client.add_cog(Helpful(client))
 client.add_cog(Social(client))
 client.add_cog(Reddit(client))
+
 client.run(token)
