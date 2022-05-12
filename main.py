@@ -2,10 +2,10 @@
 
 
 Frog Bot 2.0
-Stable Build
-Beta 0.5- The Media Update
-Updated March 3, 2022
-Code by Jonathan Creado
+Released Build
+Beta 0.6
+Updated May 11, 2022
+Copyrighted by Jonathan Creado (HereJohnnyboi)
 
 
 
@@ -30,17 +30,29 @@ import re
 import praw
 from datetime import datetime
 from bs4 import BeautifulSoup
-import time
-import math
+try:
+  from googlesearch import search
+except:
+  os.system("pip install googlesearch-python")
+  from googlesearch import search
 
 intents= discord.Intents.default()
 intents.members = True
-bot = commands.Bot(command_prefix="frog ", case_insensitive=True, intents=intents)
+bot = commands.Bot(command_prefix=["f","F","frog ","froG ","frOg ","frOG ","fRog ","fRoG ","fROg ","fROG ","Frog ","FroG ","FrOg ","FrOG ","FRog ","FRoG ","FROg ","FROG "], case_insensitive=True, intents=intents)
 client = bot
 bot.author_id = 854898025893199913
 
+
+
+
+
+
+
+
+
+
+
 def convertTuple(tup):
-        # initialize an empty string
     str = ''
     for item in tup:
         str = str + " " + item
@@ -329,11 +341,14 @@ class Music(commands.Cog):
         else:
             message = 'An error occurred: {}'.format(str(error))
 
-        await ctx.send(message)
+        embed = discord.Embed(color=0x55a7f7, timestamp=datetime.utcnow())
+        embed.add_field(name='Warning', value=message)
+        embed.set_footer(text="If you have any questions, suggestions or bug reports, please use the 'suggest' command or join our support Discord Server: link hidden", icon_url=f"{client.user.avatar_url}")
+        await ctx.send(embed=embed)
 
 
 
-    @commands.command(name='join', invoke_without_subcommand=True)
+    @commands.command(name='join', invoke_without_subcommand=True,case_insensitive = True)
     async def _join(self, ctx: commands.Context):
         """Joins a voice channel."""
 
@@ -344,7 +359,7 @@ class Music(commands.Cog):
 
         ctx.voice_state.voice = await destination.connect()
 
-    @commands.command(name='summon')
+    @commands.command(name='summon',case_insensitive = True)
     async def _summon(self, ctx: commands.Context, *, channel: discord.VoiceChannel = None):
         """Summons the bot to a voice channel.
         If no channel was specified, it joins your channel.
@@ -360,7 +375,7 @@ class Music(commands.Cog):
 
         ctx.voice_state.voice = await destination.connect()
 
-    @commands.command(name='leave', aliases=['disconnect'])
+    @commands.command(name='leave', case_insensitive = True,aliases=['disconnect'])
     async def _leave(self, ctx: commands.Context):
         """Clears the queue and leaves the voice channel."""
 
@@ -370,7 +385,7 @@ class Music(commands.Cog):
         await ctx.voice_state.stop()
         del self.voice_states[ctx.guild.id]
 
-    @commands.command(name='volume')
+    @commands.command(name='volume',case_insensitive = True)
     async def _volume(self, ctx: commands.Context, *, volume: int):
         """Sets the volume of the player."""
 
@@ -383,12 +398,12 @@ class Music(commands.Cog):
         ctx.voice_state.volume = volume / 100
         await ctx.send('Volume of the player set to {}%'.format(volume))
 
-    @commands.command(name='now', aliases=['current', 'playing'])
+    @commands.command(name='now', case_insensitive = True,aliases=['current', 'playing'])
     async def _now(self, ctx: commands.Context):
         """Displays the currently playing song."""
         await ctx.send(embed=ctx.voice_state.current.create_embed())
 
-    @commands.command()
+    @commands.command(case_insensitive = True)
     async def pause(self, ctx):
         """Pauses currently playing song [Format: %pause]"""
         SongPlaying = ctx.voice_client.is_playing()
@@ -402,7 +417,7 @@ class Music(commands.Cog):
             else:
                 await ctx.send("> There is no song currently playing.")
 
-    @commands.command()
+    @commands.command(case_insensitive = True)
     async def resume(self, ctx):
         """Resumes a paused song [Format: %resume]"""
         Paused = ctx.voice_client.is_paused()
@@ -412,7 +427,7 @@ class Music(commands.Cog):
         else:
             await ctx.send('> The player is not paused')
 
-    @commands.command(name='stop')
+    @commands.command(name='stop',case_insensitive = True)
     async def _stop(self, ctx: commands.Context):
         """Stops playing song and clears the queue."""
 
@@ -422,7 +437,7 @@ class Music(commands.Cog):
             ctx.voice_state.voice.stop()
             await ctx.message.add_reaction('⏹')
 
-    @commands.command(name='skip')
+    @commands.command(name='skip',case_insensitive = True)
     async def _skip(self, ctx: commands.Context):
         """Vote to skip a song. The requester can automatically skip.
         3 skip votes are needed for the song to be skipped.
@@ -448,7 +463,7 @@ class Music(commands.Cog):
         else:
             await ctx.send('You have already voted to skip this song.')
 
-    @commands.command(name='queue')
+    @commands.command(name='queue',case_insensitive = True)
     async def _queue(self, ctx: commands.Context, *, page: int = 1):
         """Shows the player's queue.
         You can optionally specify the page to show. Each page contains 10 elements.
@@ -471,7 +486,7 @@ class Music(commands.Cog):
                  .set_footer(text='Viewing page {}/{}'.format(page, pages)))
         await ctx.send(embed=embed)
 
-    @commands.command(name='shuffle')
+    @commands.command(name='shuffle',case_insensitive = True)
     async def _shuffle(self, ctx: commands.Context):
         """Shuffles the queue."""
 
@@ -481,7 +496,7 @@ class Music(commands.Cog):
         ctx.voice_state.songs.shuffle()
         await ctx.message.add_reaction('✅')
 
-    @commands.command(name='remove')
+    @commands.command(name='remove',case_insensitive = True)
     async def _remove(self, ctx: commands.Context, index: int):
         """Removes a song from the queue at a given index."""
 
@@ -491,7 +506,7 @@ class Music(commands.Cog):
         ctx.voice_state.songs.remove(index - 1)
         await ctx.message.add_reaction('✅')
 
-    @commands.command(name='loop')
+    @commands.command(name='loop',case_insensitive = True)
     async def _loop(self, ctx: commands.Context):
         """Loops the currently playing song.
         Invoke this command again to unloop the song.
@@ -504,7 +519,7 @@ class Music(commands.Cog):
         ctx.voice_state.loop = not ctx.voice_state.loop
         await ctx.message.add_reaction('✅')
 
-    @commands.command(name='play')
+    @commands.command(name='play',case_insensitive = True)
     async def _play(self, ctx: commands.Context, *, search: str):
         """Plays a song.
         If there are songs in the queue, this will be queued until the
@@ -572,18 +587,23 @@ class Utility(commands.Cog):
             message = str(error)
         else:
             message = 'An error occurred: {}'.format(str(error))
-        await ctx.send(message)
+        embed = discord.Embed(color=0x55a7f7, timestamp=datetime.utcnow())
+        embed.add_field(name='Warning', value=message)
+        embed.set_footer(text="If you have any questions, suggestions or bug reports, please use the 'suggest' command or join our support Discord Server: link hidden", icon_url=f"{client.user.avatar_url}")
+        await ctx.send(embed=embed)
 
-    @commands.command(pass_context=True)
+    @commands.command(pass_context=True,case_insensitive = True, aliases = ["purge","clean"])
     @commands.has_permissions(manage_guild=True)
-    async def clear(self, ctx, limit: int):
+    async def clear(self, ctx, number):
         """Clears the chat of a specified number of messages."""
-        await ctx.channel.purge(limit=limit)
+        await ctx.channel.purge(number=number)
         await ctx.send('Cleared by {}'.format(ctx.author.mention), delete_after=5)
 
     @commands.command(
         help="Shows the ping/latency of the bot in miliseconds.",
-        brief="Shows ping."
+        brief="Shows ping.",
+        case_insensitive = True,
+        aliases = ["status"]
     )
     async def ping(self, ctx):
         if round(client.latency * 1000) <= 50:
@@ -596,59 +616,54 @@ class Utility(commands.Cog):
             embed=discord.Embed(title="Pong!", description=f":ping_pong: The ping is **{round(client.latency *1000)}** milliseconds!", color=0x990000)
         await ctx.send(embed=embed)
 
-    @commands.command()
+    @commands.command(case_insensitive = True)
     async def print(self,ctx, *text):
         """Prints the specified value back to the channel."""
         await ctx.channel.send(convertTuple(text))
 
-    @commands.command()
+    @commands.command(case_insensitive = True)
     async def stream(self,ctx, *stream):
         """Changes what I am streaming."""
         await bot.change_presence(activity=discord.Streaming(name=convertTuple(stream), url="http://www.twitch.tv/accountname"))
         await ctx.message.add_reaction('✅')
 
-  
-    @commands.command()
-    async def timer(self, ctx, wait:int):
-        """Timer that needs input of seconds and user."""
-        await ctx.message.add_reaction('✅')
-        time.sleep(wait)
-        await ctx.send("Times up!")
-        await ctx.send(ctx.message.author.mention)
 
 
-    @commands.command()
+
+
+    @commands.command(case_insensitive = True, aliases = ["server"])
     async def info(self, ctx):
-      """Information about the server."""
-      name = str(ctx.guild.name)
-      description = str(ctx.guild.description)
-      
-      if description=="None":
-        description = "No server description."
-      
-      owner = str(client.get_user(int(ctx.guild.owner.id)))
-      id = str(ctx.guild.id)
-      region = str(ctx.guild.region)
-      memberCount = str(ctx.guild.member_count)
-      channels = str(len(ctx.guild.channels))
+        """Information about the server."""
+        role_count = len(ctx.guild.roles)
+        list_of_bots = [bot.mention for bot in ctx.guild.members if bot.bot]
+        staff_roles = ["Froggy","Frog","Owner", "Head Dev", "Dev", "Head Admin", "Admins", "Moderators", "Community Helpers","Mod","Support","Members"]
+        name = str(ctx.guild.name)
+        description = str(ctx.guild.description)
+        if description=="None":
+          description = "No server description."
+        embed2 = discord.Embed(title=name + " Server Information", description=description,timestamp=ctx.message.created_at, color=ctx.author.color)
+        embed2.add_field(name='Name', value=f"{ctx.guild.name}", inline=True)
+        embed2.add_field(name='Owner', value=str(client.get_user(int(ctx.guild.owner.id))), inline=True)
+        embed2.add_field(name='Verification Level', value=str(ctx.guild.verification_level), inline=True)
+        embed2.add_field(name='Highest role', value=ctx.guild.roles[0], inline=True)
 
-      icon = str(ctx.guild.icon_url)
-   
-      embed = discord.Embed(
-          title=name + " Server Information",
-          description=description,
-          color=discord.Color.blue()
-        )
-      embed.set_thumbnail(url=icon)
-      embed.add_field(name="Owner", value=owner, inline=True)
-      embed.add_field(name="Server ID", value=id, inline=True)
-      embed.add_field(name="Region", value=region, inline=True)
-      embed.add_field(name="Member Count", value=memberCount, inline=True)
-      embed.add_field(name="Channel Count", value=channels, inline=True)
-      await ctx.send(embed=embed)
+        for r in staff_roles:
+            role = discord.utils.get(ctx.guild.roles, name=r)
+            if role:
+                members = '\n'.join([member.name for member in role.members]) or "None"
+                embed2.add_field(name=role.name, value=members)
+
+        embed2.add_field(name='Number of roles', value=str(role_count), inline=True)
+        embed2.add_field(name='Number Of Members', value=ctx.guild.member_count, inline=True)
+        embed2.add_field(name='Bots:', value=(', '.join(list_of_bots)))
+        embed2.add_field(name='Created At', value=ctx.guild.created_at.__format__('%A, %d. %B %Y @ %H:%M:%S'), inline=True)
+        embed2.set_thumbnail(url=ctx.guild.icon_url)
+        embed2.set_author(name=ctx.author.name, icon_url=ctx.author.avatar_url)
+        embed2.set_footer(text=self.bot.user.name, icon_url=self.bot.user.avatar_url)
+        await ctx.send(embed=embed2) 
 
 
-    @commands.command()
+    @commands.command(case_insensitive = True, aliases = ["youtube"])
     async def video(self, ctx, *, search):
         """Seacrches youtube for videos."""
         query_string = parse.urlencode({'search_query': search})
@@ -658,18 +673,11 @@ class Utility(commands.Cog):
         print(search_results)
         await ctx.send('https://www.youtube.com/watch?v=' + search_results[0])
 
-
-    @commands.command()
-    async def shutdown(self,ctx):
-        """A fail safe"""
-        await ctx.send("Shutting down...")
-        exit()
     
-
-    @commands.command()
+    @commands.command(case_insensitive = True, aliases = ["suggestion"])
     async def suggest(self,ctx, *suggestion):
       """Help me be better by suggesting!"""
-      stuff = "\n" + convertTuple(suggestion)
+      stuff = "\n" + str(ctx.message.author) + ": " + convertTuple(suggestion)
       f = open("suggestions.txt", "a")
       f.write(stuff)
       f.close()
@@ -678,7 +686,7 @@ class Utility(commands.Cog):
 
 
 
-    @commands.command()
+    @commands.command(case_insensitive = True)
     @commands.has_guild_permissions(kick_members=True)
     async def kick(self,ctx, member: discord.Member, *, reason=None):
       """Kicks a user."""
@@ -686,7 +694,7 @@ class Utility(commands.Cog):
       await ctx.message.add_reaction('✅')
       await ctx.send(f'{member.name} has been kicked for the reason of {reason}')
 
-    @commands.command()
+    @commands.command(case_insensitive = True)
     @commands.has_permissions(ban_members=True)
     async def ban(self,ctx, member: discord.Member, *, reason=None):
       """Bans a user."""
@@ -694,29 +702,30 @@ class Utility(commands.Cog):
       await ctx.message.add_reaction('✅')
       await ctx.send(f'{member.name} has been banned for the reason of {reason}')
 
-    @commands.command(pass_context=True)
+    @commands.command(pass_context=True,case_insensitive = True)
     @commands.has_permissions(manage_guild=True)
     async def role(self, ctx, user: discord.Member, role: discord.Role):
+        """Gives a user a role."""
         await user.add_roles(role)
         await ctx.message.add_reaction('✅')
         await ctx.send(f"{user.name} has been giving a role called: {role.name}")
     
-    @commands.command()
+    @commands.command(case_insensitive = True, aliases = ["spam"])
     async def repeat(self, ctx, times: int, *content):
         """Repeats a message multiple times."""
-        if times > 100:
-          await ctx.send("You can only repeat things up to 100 times.")
+        if times > 10:
+          await ctx.send("You can only repeat things up to 10 times.")
         else: 
           for i in range(times):
             await ctx.send(convertTuple(content))
     
-    @commands.command()
+    @commands.command(case_insensitive = True)
     async def icon(self, ctx):
         """Links the server's icon."""
         icon_url = ctx.guild.icon_url
         await ctx.send(icon_url)
 
-    @commands.command()
+    @commands.command(case_insensitive = True)
     async def avatar(self, ctx, *,  avamember : discord.Member="test"):
         """Links the specified user's avatar."""
         if avamember == "test":
@@ -724,6 +733,17 @@ class Utility(commands.Cog):
         else:
           userAvatarUrl = avamember.avatar_url
           await ctx.send(userAvatarUrl)
+
+    @commands.command(pass_context=True, aliases=["rr", "removerole"])
+    @commands.has_permissions(manage_guild=True)
+    async def roleremove(self, ctx, user: discord.Member, roleid):
+      """Removes a role from a user."""
+      asyncio.sleep(1)
+      guild = ctx.message.guild
+      role = guild.get_role(int(roleid))
+      await user.remove_roles(role)
+      await ctx.send(f"{user.name} has had a role taken from them.")
+
 
 cointoss = ["heads","tails"]
 shoot0 = [
@@ -776,44 +796,59 @@ class Math(commands.Cog):
             message = str(error)
         else:
             message = 'An error occurred: {}'.format(str(error))
-        await ctx.send(message)
+        embed = discord.Embed(color=0x55a7f7, timestamp=datetime.utcnow())
+        embed.add_field(name='Warning', value=message)
+        embed.set_footer(text="If you have any questions, suggestions or bug reports, please use the 'suggest' command or join our support Discord Server: link hidden", icon_url=f"{client.user.avatar_url}")
+        await ctx.send(embed=embed)
+
       
-    @commands.command()
-    async def add(self,ctx, left: int, right: int):
+    @commands.command(case_insensitive = True)
+    async def add(self,ctx, first_number: int, second_number: int):
         """Adds two numbers together."""
-        await ctx.send(left + right)
+        await ctx.send(first_number + second_number)
 
-    @commands.command()
-    async def subtract(self,ctx, left: int, right: int):
+    @commands.command(case_insensitive = True)
+    async def subtract(self,ctx, first_number: int, second_number: int):
         """Subtracts two numbers."""
-        await ctx.send(left - right)
+        await ctx.send(first_number - second_number)
 
-    @commands.command()
-    async def multiply(self,ctx, left: int, right: int):
+    @commands.command(case_insensitive = True)
+    async def multiply(self,ctx, first_number: int, second_number: int):
         """Multiply two numbers."""
-        await ctx.send(left * right)
+        await ctx.send(first_number * second_number)
 
-    @commands.command()
-    async def divide(self,ctx, left: int, right: int):
+    @commands.command(case_insensitive = True)
+    async def divide(self,ctx, first_number: int, second_number: int):
         """Divides two numbers."""
-        await ctx.send(left / right)
+        await ctx.send(first_number / second_number)
 
-    @commands.command()
+    @commands.command(case_insensitive = True, aliases = ["root","square root"])
     async def sqrt(self, ctx, number: int):
         '''Calculates the square root of a number.'''
         await ctx.send(math.sqrt(number))
       
-    @commands.command()
+    @commands.command(case_insensitive = True, aliases = ["tangent"])
     async def tan(self, ctx, number: int):
         '''Calculates the tangent of a number.'''
         await ctx.send(round(math.tan(math.radians(number)),2))
 
-    @commands.command()
+    @commands.command(case_insensitive = True, aliases = ["sine"])
+    async def sin(self, ctx, number: int):
+        '''Calculates the tangent of a number.'''
+        await ctx.send(round(math.sin(math.radians(number)),2))
+
+    @commands.command(case_insensitive = True, aliases = ["cosine"])
+    async def cos(self, ctx, number: int):
+        '''Calculates the tangent of a number.'''
+        await ctx.send(round(math.cos(math.radians(number)),2))
+
+  
+    @commands.command(case_insensitive = True, aliases = ["radian","radians"])
     async def rad(self, ctx, number: int):
         '''Converts given number of degrees into radians.'''
         await ctx.send(math.radians(number))
 
-    @commands.command()
+    @commands.command(case_insensitive = True, aliases = ["degree","degrees"])
     async def deg(self, ctx, number: int):
         '''Converts given number of radians into degrees.'''
         await ctx.send(math.degrees(number))
@@ -861,16 +896,19 @@ class Helpful(commands.Cog):
             message = str(error)
         else:
             message = 'An error occurred: {}'.format(str(error))
-        await ctx.send(message)
+        embed = discord.Embed(color=0x55a7f7, timestamp=datetime.utcnow())
+        embed.add_field(name='Warning', value=message)
+        embed.set_footer(text="If you have any questions, suggestions or bug reports, please use the 'suggest' command or join our support Discord Server: link hidden", icon_url=f"{client.user.avatar_url}")
+        await ctx.send(embed=embed)
 
-    @commands.command()
+    @commands.command(case_insensitive = True)
     async def inspire(self,ctx):
         """Sends an inspirational quote."""
         embed = discord.Embed(title=f"{get_quote()}", color=discord.Color.blue())
         embed.set_footer(text=f"Quotes from zenquotes.io")
         await ctx.send(embed=embed)
 
-    @commands.command()
+    @commands.command(case_insensitive = True, aliases = ["flip","coin"])
     async def coinflip(self,ctx):
         """Flips a coin"""
         coin = random.choice(cointoss)
@@ -883,14 +921,14 @@ class Helpful(commands.Cog):
           embed.set_thumbnail(url="https://m.media-amazon.com/images/I/51NyMaKLydL._AC_.jpg")
           await ctx.send(embed=embed)
 
-    @commands.command()
+    @commands.command(case_insensitive = True, aliases = ["matoo","truth"])
     async def fax(self,ctx):
       """Fax"""
-      await ctx.send("Matoo is good")
+      await ctx.send("Matoo is sexy")
 
 
     @commands.command()
-    async def rps(self,ctx):
+    async def rps(self,ctx,case_insensitive = True):
         """ROCK PAPER SCISSORS SHOOT!!!!"""
         shoot = random.choice(shoot0)
         if shoot == "rock":
@@ -906,7 +944,7 @@ class Helpful(commands.Cog):
           embed.set_thumbnail(url="https://upload.wikimedia.org/wikipedia/commons/thumb/7/76/Pair_of_scissors_with_black_handle%2C_2015-06-07.jpg/1200px-Pair_of_scissors_with_black_handle%2C_2015-06-07.jpg")
           await ctx.send(embed=embed)
 
-    @commands.command()
+    @commands.command(case_insensitive = True, aliases = ["roll"])
     async def dice(self,ctx):
         """Rolls a dice."""
         shoot = random.choice(roll0)
@@ -935,7 +973,9 @@ class Helpful(commands.Cog):
           embed.set_thumbnail(url="http://www.clker.com/cliparts/l/6/4/3/K/H/dice-6-md.png")
           await ctx.send(embed=embed)
 
-    @commands.command()
+
+  
+    @commands.command(case_insensitive = True, aliases = ["dictionary"])
     async def define(self,ctx, worddd=""):
         """Sends the definition of a word."""
         
@@ -985,6 +1025,69 @@ class Helpful(commands.Cog):
             embed = discord.Embed(title=word_to_search, description='Failed to get response...', color=discord.Color.blue())
             await ctx.send(embed=embed)
 
+  
+    @commands.command(case_insensitive = True, aliases = ["remind", "remindme", "remind_me", "timer"])
+    async def reminder(self, ctx, time, *, reminder):
+        """A reminder that pings you after the set time is over."""
+        print(time)
+        print(reminder)
+        user = ctx.message.author
+        embed = discord.Embed(color=0x55a7f7, timestamp=datetime.utcnow())
+        embed.set_footer(text="If you have any questions, suggestions or bug reports, please join our support Discord Server: link hidden", icon_url=f"{client.user.avatar_url}")
+        seconds = 0
+        if reminder is None:
+            embed.add_field(name='Warning', value='Please specify what do you want me to remind you about.') # Error message
+        if time.lower().endswith("d"):
+            seconds += int(time[:-1]) * 60 * 60 * 24
+            counter = f"{seconds // 60 // 60 // 24} days"
+        if time.lower().endswith("h"):
+            seconds += int(time[:-1]) * 60 * 60
+            counter = f"{seconds // 60 // 60} hours"
+        elif time.lower().endswith("m"):
+            seconds += int(time[:-1]) * 60
+            counter = f"{seconds // 60} minutes"
+        elif time.lower().endswith("s"):
+            seconds += int(time[:-1])
+            counter = f"{seconds} seconds"
+        if seconds == 0:
+            embed.add_field(name='Warning',
+                            value='Please specify a proper duration, send `reminder_help` for more information.')
+        #elif seconds < 300:
+        #    embed.add_field(name='Warning',
+        #                value='You have specified a too short duration!\nMinimum duration is 5 minutes.')
+        elif seconds > 7776000:
+            embed.add_field(name='Warning', value='You have specified a too long duration!\nMaximum duration is 90 days.')
+        else:
+            await ctx.send(f"Alright, I will remind you about {reminder} in {counter}.")
+            await asyncio.sleep(seconds-2)
+            await ctx.send(f'Hi {user.mention}, you asked me to remind you about "{reminder}" {counter} ago.')
+            return
+        await ctx.send(embed=embed)
+
+
+    @commands.command(case_insensitive = True, aliases = ["udictionary", "urban dictionary "])
+    async def urban(self,ctx, *, udsearchq):
+        """Searches definitions in the 'Urban Dictionary'."""
+        try:
+            uds = udsearchq.replace(" ", "%20")
+            res = requests.get(f"https://udict-api.glique.repl.co/{uds}").json()
+            auth = res["author"]
+            defi = res["definition"]
+            example = res["example"]
+            url = res["permalink"]
+            embed=discord.Embed(title=udsearchq, url=url, description='(Urban Dictionary Definition)', color=0x324e85)
+            embed.add_field(name="Author:", value=auth, inline=False)
+            embed.add_field(name="Definition:", value=defi, inline=False)
+            embed.add_field(name="Example:", value=example, inline=False)
+            embed.set_footer(text=f"Definitions from The Urban Dictionary")
+            await ctx.send(embed=embed)
+        except:
+            embed=discord.Embed(title=udsearchq, description='Not Found', color=0x324e85)
+            await ctx.send(embed=embed)
+
+
+
+
 
 
 
@@ -1023,34 +1126,37 @@ class Social(commands.Cog):
             message = str(error)
         else:
             message = 'An error occurred: {}'.format(str(error))
-        await ctx.send(message)
+        embed = discord.Embed(color=0x55a7f7, timestamp=datetime.utcnow())
+        embed.add_field(name='Warning', value=message)
+        embed.set_footer(text="If you have any questions, suggestions or bug reports, please use the 'suggest' command or join our support Discord Server: link hidden", icon_url=f"{client.user.avatar_url}")
+        await ctx.send(embed=embed)
 
-    @commands.command()
+    @commands.command(case_insensitive = True)
     async def lol(self,ctx):
         """Ha"""
         await ctx.send("HA")
 
-    @commands.command()
+    @commands.command(case_insensitive = True)
     async def lmao(self,ctx):
         """HAHA"""
         content="HAHA"
         for i in range(5):
             await ctx.send(content)
 
-    @commands.command()
+    @commands.command(case_insensitive = True)
     async def lmfao(self,ctx):
         """HAHAHAHAHAHAHAHA"""
         content="HAHA"
         for i in range(100):
             await ctx.send(content)
     
-    @commands.command()
+    @commands.command(case_insensitive = True)
     async def onigai(self,ctx):
         """ONI GAI"""
         embed = discord.Embed(title=f"**ONIGAI**",color=discord.Color.blue())
         await ctx.send(embed=embed)
 
-    @commands.command()
+    @commands.command(case_insensitive = True)
     async def ribbit(self,ctx):
         """What do you expect, i'm a frog."""
         content="Ribbit"
@@ -1058,28 +1164,28 @@ class Social(commands.Cog):
         for i in range(2):
             await ctx.send(content)
 
-    @commands.command()
+    @commands.command(case_insensitive = True)
     async def nou(self,ctx):
         """NO U!!!"""
         embed = discord.Embed(title=f"NO U",color=discord.Color.blue())
         embed.set_thumbnail(url="https://m.media-amazon.com/images/I/515EBaHdMoL._AC_SL1000_.jpg")
         await ctx.send(embed=embed)
 
-    @commands.command()
+    @commands.command(case_insensitive = True)
     async def notfunny(self,ctx):
         """Not funny."""
         embed = discord.Embed(title=f"No haha",color=discord.Color.blue())
         embed.set_thumbnail(url="https://c.tenor.com/BM-QtYCZIloAAAAM/not-funny-didnt-laugh.gif")
         await ctx.send(embed=embed)
 
-    @commands.command()
+    @commands.command(case_insensitive = True)
     async def gasp(self,ctx):
         """Gasp!"""
         embed = discord.Embed(title=f"*Gasp*",color=discord.Color.blue())
         embed.set_thumbnail(url="https://wp.wwu.edu/emmettpaige/files/2018/11/cropped-pika-2i0clzo.jpg")
         await ctx.send(embed=embed)
 
-    @commands.command()
+    @commands.command(case_insensitive = True)
     async def deez(self,ctx):
       """Hmmmm"""
       embed = discord.Embed(title=f"",color=discord.Color.blue())
@@ -1126,10 +1232,13 @@ class Reddit(commands.Cog):
             message = str(error)
         else:
             message = 'An error occurred: {}'.format(str(error))
-        await ctx.send(message)
+        embed = discord.Embed(color=0x55a7f7, timestamp=datetime.utcnow())
+        embed.add_field(name='Warning', value=message)
+        embed.set_footer(text="If you have any questions, suggestions or bug reports, please use the 'suggest' command or join our support Discord Server: link hidden", icon_url=f"{client.user.avatar_url}")
+        await ctx.send(embed=embed)
 
 
-    @commands.command()
+    @commands.command(case_insensitive = True, aliases = ["funny"])
     async def joke(self, ctx):
       """Sends a life pro tip from r/dadjokes."""
       subreddit = reddit.subreddit("dadjokes")
@@ -1144,7 +1253,7 @@ class Reddit(commands.Cog):
       embed.set_footer(text=f"Asked by {ctx.author.name}")
       await ctx.send(embed=embed)
 
-    @commands.command()
+    @commands.command(case_insensitive = True )
     async def news(self, ctx):
       """Sends news from r/worldnews."""
       subreddit = reddit.subreddit("worldnews")
@@ -1160,7 +1269,7 @@ class Reddit(commands.Cog):
       await ctx.send(embed=embed)
     
 
-    @commands.command()
+    @commands.command(case_insensitive = True, aliases = ["life pro tip","tip","advice"])
     async def lpt(self, ctx):
       """Sends a life pro tip from r/LifeProTips."""
       subreddit = reddit.subreddit("LifeProTips")
@@ -1175,8 +1284,8 @@ class Reddit(commands.Cog):
       embed.set_footer(text=f"Asked by {ctx.author.name}")
       await ctx.send(embed=embed)
 
-  
-    @commands.command()
+
+    @commands.command(case_insensitive = True)
     async def meme(self, ctx):
         """Sends a meme from r/memes."""
         subreddit = reddit.subreddit("memes")
@@ -1191,8 +1300,8 @@ class Reddit(commands.Cog):
         embed.set_image(url = url)
         embed.set_footer(text=f"Asked by {ctx.author.name}")
         await ctx.send(embed=embed)
-
-    @commands.command()
+  
+    @commands.command(case_insensitive = True, aliases = ["cool guide"])
     async def guide(self, ctx):
         """Sends a cool guide from r/coolguides."""
         subreddit = reddit.subreddit("coolguides")
@@ -1208,7 +1317,7 @@ class Reddit(commands.Cog):
         embed.set_footer(text=f"Asked by {ctx.author.name}")
         await ctx.send(embed=embed)
 
-    @commands.command()
+    @commands.command(case_insensitive = True, aliases = ["picture","photo"])
     async def pic(self, ctx):
         """Sends a cool picture from r/pics."""
         subreddit = reddit.subreddit("pics")
@@ -1224,7 +1333,7 @@ class Reddit(commands.Cog):
         embed.set_footer(text=f"Asked by {ctx.author.name}")
         await ctx.send(embed=embed)
 
-    @commands.command()
+    @commands.command(case_insensitive = True, aliases = ["food porn","yummy"])
     async def food(self, ctx):
         """Sends a picture of food from r/food."""
         subreddit = reddit.subreddit("food")
@@ -1240,7 +1349,7 @@ class Reddit(commands.Cog):
         embed.set_footer(text=f"Asked by {ctx.author.name}")
         await ctx.send(embed=embed)
 
-    @commands.command()
+    @commands.command(case_insensitive = True, aliases = ["universe","sun","moon"])
     async def space(self, ctx):
         """Sends a picture of space from r/spaceporn."""
         subreddit = reddit.subreddit("spaceporn")
@@ -1256,7 +1365,7 @@ class Reddit(commands.Cog):
         embed.set_footer(text=f"Asked by {ctx.author.name}")
         await ctx.send(embed=embed)
 
-    @commands.command()
+    @commands.command(case_insensitive = True)
     async def greentext(self, ctx):
         """Sends a 4chan story from r/greentext."""
         subreddit = reddit.subreddit("greentext")
@@ -1272,8 +1381,7 @@ class Reddit(commands.Cog):
         embed.set_footer(text=f"Asked by {ctx.author.name}")
         await ctx.send(embed=embed)
 
-      
-    @commands.command()
+    @commands.command(case_insensitive = True, aliases = ["doggy","puppy"])
     async def dog(self, ctx):
         """Sends a cute dog pic from r/dogpictures."""
         subreddit = reddit.subreddit("dogpictures")
@@ -1289,7 +1397,7 @@ class Reddit(commands.Cog):
         embed.set_footer(text=f"Asked by {ctx.author.name}")
         await ctx.send(embed=embed)
 
-    @commands.command()
+    @commands.command(case_insensitive = True, aliases = ["kitty", "kitten"])
     async def cat(self, ctx):
         """Sends a cute cat pic from r/catpics."""
         subreddit = reddit.subreddit("catpics")
@@ -1306,7 +1414,7 @@ class Reddit(commands.Cog):
         await ctx.send(embed=embed)
 
 
-    @commands.command()
+    @commands.command(case_insensitive = True)
     async def earth(self, ctx):
         """Sends a picture from r/earthporn."""
         subreddit = reddit.subreddit("EarthPorn")
@@ -1322,7 +1430,7 @@ class Reddit(commands.Cog):
         embed.set_footer(text=f"Asked by {ctx.author.name}")
         await ctx.send(embed=embed)
 
-
+        
 menu = DefaultMenu('◀️', '▶️', '❌') # You can copy-paste any icons you want.
 bot.help_command = PrettyHelp(navigation=menu, color=discord.Colour.green())
 
@@ -1332,11 +1440,17 @@ keep_alive()
 async def on_ready():
     await bot.change_presence(activity=discord.Streaming(name="frog help", url="http://www.twitch.tv/accountname"))
 
+
+
+
 client.add_cog(Utility(client))
 client.add_cog(Music(client))
 client.add_cog(Math(client))
 client.add_cog(Helpful(client))
 client.add_cog(Social(client))
 client.add_cog(Reddit(client))
+oldToken = os.environ['oldToken']
+token = os.environ['token']
+client.run(oldToken)
 
-client.run(token)
+
