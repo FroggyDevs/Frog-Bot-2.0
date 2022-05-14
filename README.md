@@ -6,8 +6,7 @@ Frog Bot 2.0 is a discord bot that can add some fun to your server! It has many 
 
 ## Website
 
-To get the bot and learn more about The Froggy Gang and Frog Bot, go to [The Froggy Gang.](https://sites.google.com/view/the-froggy-gang/home)
-To view a full command changelog, go to [Frog Bot 2.0 Changelog.](https://docs.google.com/document/d/1Lo62dreCjfNr0GNWGwCid1ZX-cgBqMz1xsxHmNZHhJk/edit?usp=sharing)
+To get the bot, click [this link](https://bit.ly/3OlMy6X). To view a full command changelog, go to [Frog Bot 2.0 Changelog.](https://docs.google.com/document/d/1Lo62dreCjfNr0GNWGwCid1ZX-cgBqMz1xsxHmNZHhJk/edit?usp=sharing)
 
 ## How to create your version of Frog Bot 2.0!
 
