@@ -1,3 +1,5 @@
+![Bot Logo](https://raw.githubusercontent.com/FroggyDevs/Frog-Bot-2.0/main/botlogo%203.png)
+
 # Frog Bot 2.0
 ##### Current Stable Release: Beta 0.6
 ## Description
