@@ -1,6 +1,10 @@
-![Bot Logo](https://raw.githubusercontent.com/FroggyDevs/Frog-Bot-2.0/main/botlogo.png)
+
+
 
 # Frog Bot 2.0
+
+<img src="https://raw.githubusercontent.com/FroggyDevs/Frog-Bot-2.0/main/botlogo.png" width="200">
+
 ##### Current Stable Release: Beta 0.6
 ## Description
 
