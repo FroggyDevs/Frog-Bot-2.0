@@ -35,12 +35,6 @@ When the repository is finished cloning, you will be prompted to configure the r
 When done importing packages, scroll all the way down and replace `bot.run(token)`
 with `bot.run("number")`, with `"number"` being your application's token in quotes. When you are ready, click run and watch the magic happen. 
 
-##### REMEMBER: You may not use this for commercial use. If you are to copy/change and then distribute this work, you must give credit to me and publish it under the sames license.
-
-
-\
-![Frog Bot 2.0 Update 0.5 Flyer](https://raw.githubusercontent.com/HereJohnnyboi/Frog-Bot-2.0/HereJohnnyboi-flyers/frog-bot-2.0-0.5.png)
-
 
 
 ### License
